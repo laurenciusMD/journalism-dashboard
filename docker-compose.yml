@@ -5,7 +5,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: laurenciusmd/journalism-dashboard-backend:latest
+    image: laurencius/journalism-dashboard-backend:latest
     container_name: journalism-dashboard-backend
     restart: unless-stopped
     ports:
@@ -37,7 +37,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: laurenciusmd/journalism-dashboard-frontend:latest
+    image: laurencius/journalism-dashboard-frontend:latest
     container_name: journalism-dashboard-frontend
     restart: unless-stopped
     ports:

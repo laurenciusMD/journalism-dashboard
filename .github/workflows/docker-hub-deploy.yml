@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_USERNAME: laurenciusmd
+  DOCKER_USERNAME: laurencius
 
 jobs:
   build-and-push:

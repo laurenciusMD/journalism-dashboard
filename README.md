@@ -115,12 +115,12 @@ Die Images werden automatisch bei jedem Push auf `main` auf Docker Hub deployed:
 
 **Frontend:**
 ```bash
-docker pull laurenciusmd/journalism-dashboard-frontend:latest
+docker pull laurencius/journalism-dashboard-frontend:latest
 ```
 
 **Backend:**
 ```bash
-docker pull laurenciusmd/journalism-dashboard-backend:latest
+docker pull laurencius/journalism-dashboard-backend:latest
 ```
 
 ### Manuelles Docker Build
