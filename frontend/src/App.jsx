@@ -1,9 +1,69 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './styles/App.css'
+import Login from './components/Login.jsx'
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [username, setUsername] = useState('')
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
   const [showSettings, setShowSettings] = useState(false)
+
+  // Check auth status on mount
+  useEffect(() => {
+    checkAuthStatus()
+  }, [])
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch('/api/auth/status', {
+        credentials: 'include'
+      })
+      const data = await response.json()
+
+      if (data.authenticated) {
+        setIsAuthenticated(true)
+        setUsername(data.username)
+      }
+    } catch (err) {
+      console.error('Auth check failed:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleLoginSuccess = (user) => {
+    setIsAuthenticated(true)
+    setUsername(user)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      })
+      setIsAuthenticated(false)
+      setUsername('')
+    } catch (err) {
+      console.error('Logout failed:', err)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="dashboard loading-screen">
+        <div className="loading-spinner">
+          <h2>📰 Journalism Dashboard</h2>
+          <p>Lädt...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />
+  }
 
   return (
     <div className="dashboard">
@@ -14,9 +74,13 @@ function App() {
             <p className="subtitle">Ihre zentrale Arbeitsumgebung für journalistische Arbeit</p>
           </div>
           <div className="header-actions">
+            <span className="username-display">👤 {username}</span>
             <input type="text" className="search-box" placeholder="🔍 Suchen..." />
             <button className="settings-btn" onClick={() => setShowSettings(!showSettings)}>
               ⚙️ Einstellungen
+            </button>
+            <button className="logout-btn" onClick={handleLogout}>
+              🚪 Abmelden
             </button>
           </div>
         </div>

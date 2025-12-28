@@ -1,8 +1,10 @@
 import express from 'express';
+import session from 'express-session';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { requireAuth, validateCredentials, validateNextcloudAuth } from './middleware/auth.js';
 
 // ES module workaround for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -14,18 +16,100 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'change-this-secret-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
 // Middleware
 app.use(express.json());
 
 // CORS only for API routes
 app.use('/api', cors({
-  origin: process.env.FRONTEND_URL || '*'
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
 }));
 
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Health check endpoint
+// ===== Authentication Routes =====
+
+// Login endpoint
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password, useNextcloud } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        error: 'Username and password required'
+      });
+    }
+
+    let isValid = false;
+
+    // Option 1: Validate against Nextcloud (if enabled)
+    if (useNextcloud && process.env.NEXTCLOUD_URL) {
+      isValid = await validateNextcloudAuth(username, password, process.env.NEXTCLOUD_URL);
+    }
+
+    // Option 2: Validate against environment variables
+    if (!isValid) {
+      isValid = validateCredentials(username, password);
+    }
+
+    if (isValid) {
+      req.session.authenticated = true;
+      req.session.username = username;
+
+      res.json({
+        success: true,
+        message: 'Login successful',
+        username
+      });
+    } else {
+      res.status(401).json({
+        error: 'Invalid credentials'
+      });
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Logout endpoint
+app.post('/api/auth/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Logout failed' });
+    }
+    res.json({ success: true, message: 'Logged out successfully' });
+  });
+});
+
+// Check auth status
+app.get('/api/auth/status', (req, res) => {
+  if (req.session && req.session.authenticated) {
+    res.json({
+      authenticated: true,
+      username: req.session.username
+    });
+  } else {
+    res.json({
+      authenticated: false
+    });
+  }
+});
+
+// Health check endpoint (public - no auth required)
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
@@ -34,8 +118,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ===== Protected API Routes (require authentication) =====
+
 // AI Routes - Claude
-app.post('/api/ai/claude/generate', async (req, res) => {
+app.post('/api/ai/claude/generate', requireAuth, async (req, res) => {
   try {
     const { prompt, context } = req.body;
 
@@ -51,7 +137,7 @@ app.post('/api/ai/claude/generate', async (req, res) => {
 });
 
 // AI Routes - Gemini
-app.post('/api/ai/gemini/research', async (req, res) => {
+app.post('/api/ai/gemini/research', requireAuth, async (req, res) => {
   try {
     const { query, sources } = req.body;
 
@@ -67,7 +153,7 @@ app.post('/api/ai/gemini/research', async (req, res) => {
 });
 
 // AI Routes - ChatGPT
-app.post('/api/ai/openai/transform', async (req, res) => {
+app.post('/api/ai/openai/transform', requireAuth, async (req, res) => {
   try {
     const { content, instruction } = req.body;
 
@@ -83,7 +169,7 @@ app.post('/api/ai/openai/transform', async (req, res) => {
 });
 
 // Cloud Storage Routes - Google Drive
-app.get('/api/storage/drive/list', async (req, res) => {
+app.get('/api/storage/drive/list', requireAuth, async (req, res) => {
   try {
     // TODO: Implement Google Drive API integration
     res.json({
@@ -96,7 +182,7 @@ app.get('/api/storage/drive/list', async (req, res) => {
 });
 
 // Cloud Storage Routes - Nextcloud/WebDAV
-app.post('/api/storage/nextcloud/connect', async (req, res) => {
+app.post('/api/storage/nextcloud/connect', requireAuth, async (req, res) => {
   try {
     const { url, username, password } = req.body;
 
