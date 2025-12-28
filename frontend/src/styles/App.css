@@ -227,6 +227,10 @@
   background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
 }
 
+.card-research {
+  background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
+}
+
 .card-icon {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
