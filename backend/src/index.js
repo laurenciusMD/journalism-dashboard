@@ -95,7 +95,57 @@ app.get('/api/storage/drive/list', async (req, res) => {
   }
 });
 
-// Cloud Storage Routes - WebDAV (Private Cloud)
+// Cloud Storage Routes - Nextcloud/WebDAV
+app.post('/api/storage/nextcloud/connect', async (req, res) => {
+  try {
+    const { url, username, password } = req.body;
+
+    if (!url || !username || !password) {
+      return res.status(400).json({
+        error: 'Missing required fields: url, username, password'
+      });
+    }
+
+    // Test connection (in production, use proper service)
+    res.json({
+      status: 'success',
+      message: 'Nextcloud connection configured',
+      url
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/storage/nextcloud/files', async (req, res) => {
+  try {
+    const { path = '/' } = req.query;
+
+    // TODO: Implement actual Nextcloud file listing
+    res.json({
+      status: 'pending',
+      message: 'Nextcloud integration coming soon',
+      path,
+      files: []
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/storage/nextcloud/upload', async (req, res) => {
+  try {
+    // TODO: Implement file upload to Nextcloud
+    res.json({
+      status: 'pending',
+      message: 'Nextcloud upload coming soon'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Cloud Storage Routes - WebDAV (Generic)
 app.get('/api/storage/webdav/list', async (req, res) => {
   try {
     // TODO: Implement WebDAV integration
