@@ -38,6 +38,9 @@ COPY backend/ ./
 # Copy built frontend from frontend-builder stage
 COPY --from=frontend-builder /app/frontend/dist ./public
 
+# Create data directory for SQLite database
+RUN mkdir -p /app/data
+
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \

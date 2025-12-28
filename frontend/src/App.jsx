@@ -1,35 +1,53 @@
 import { useState, useEffect } from 'react'
 import './styles/App.css'
 import Login from './components/Login.jsx'
+import Register from './components/Register.jsx'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState('')
   const [loading, setLoading] = useState(true)
+  const [needsSetup, setNeedsSetup] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [showSettings, setShowSettings] = useState(false)
 
-  // Check auth status on mount
+  // Check auth status and setup requirements on mount
   useEffect(() => {
-    checkAuthStatus()
+    checkSetupAndAuth()
   }, [])
 
-  const checkAuthStatus = async () => {
+  const checkSetupAndAuth = async () => {
     try {
-      const response = await fetch('/api/auth/status', {
+      // First, check if setup is needed
+      const setupResponse = await fetch('/api/auth/needs-setup', {
         credentials: 'include'
       })
-      const data = await response.json()
+      const setupData = await setupResponse.json()
+      setNeedsSetup(setupData.needsSetup)
 
-      if (data.authenticated) {
-        setIsAuthenticated(true)
-        setUsername(data.username)
+      // If setup is not needed, check auth status
+      if (!setupData.needsSetup) {
+        const authResponse = await fetch('/api/auth/status', {
+          credentials: 'include'
+        })
+        const authData = await authResponse.json()
+
+        if (authData.authenticated) {
+          setIsAuthenticated(true)
+          setUsername(authData.username)
+        }
       }
     } catch (err) {
-      console.error('Auth check failed:', err)
+      console.error('Setup/Auth check failed:', err)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleRegisterSuccess = (user) => {
+    setIsAuthenticated(true)
+    setUsername(user)
+    setNeedsSetup(false)
   }
 
   const handleLoginSuccess = (user) => {
@@ -62,6 +80,12 @@ function App() {
   }
 
   if (!isAuthenticated) {
+    // Show registration page if no users exist
+    if (needsSetup) {
+      return <Register onRegisterSuccess={handleRegisterSuccess} />
+    }
+
+    // Show login page if users exist
     return <Login onLoginSuccess={handleLoginSuccess} />
   }
 
