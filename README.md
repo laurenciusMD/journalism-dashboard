@@ -1,5 +1,9 @@
 # Journalism Dashboard
 
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-laurencius-blue?logo=docker)](https://hub.docker.com/u/laurencius)
+[![Build and Push](https://github.com/laurenciusMD/journalism-dashboard/actions/workflows/docker-hub-deploy.yml/badge.svg)](https://github.com/laurenciusMD/journalism-dashboard/actions/workflows/docker-hub-deploy.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Ein zentrales, KI-gestütztes Dashboard für journalistische Arbeit - Ihre persönliche Startseite für Content-Erstellung, Recherche und Informationsmanagement.
 
 ## Übersicht
