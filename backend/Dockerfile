@@ -12,7 +12,7 @@ COPY package*.json ./
 
 # Install production dependencies only
 ENV NODE_ENV=production
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --production && npm cache clean --force
 
 # Copy source code
 COPY . .
