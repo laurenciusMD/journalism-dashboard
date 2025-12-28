@@ -75,6 +75,100 @@ npm run dev
 Das Frontend läuft auf `http://localhost:5173`
 Das Backend läuft auf `http://localhost:3001`
 
+## Docker Deployment
+
+### Mit Docker Compose (empfohlen)
+
+1. **Umgebungsvariablen konfigurieren**
+```bash
+cp .env.example .env
+# Bearbeiten Sie .env und fügen Sie Ihre API-Keys hinzu
+```
+
+2. **Container starten**
+```bash
+docker-compose up -d
+```
+
+3. **Zugriff**
+- Frontend: `http://localhost`
+- Backend API: `http://localhost:3001`
+
+4. **Container verwalten**
+```bash
+# Status prüfen
+docker-compose ps
+
+# Logs ansehen
+docker-compose logs -f
+
+# Container stoppen
+docker-compose down
+
+# Container neu builden
+docker-compose build --no-cache
+```
+
+### Docker Hub Images
+
+Die Images werden automatisch bei jedem Push auf `main` auf Docker Hub deployed:
+
+**Frontend:**
+```bash
+docker pull laurenciusmd/journalism-dashboard-frontend:latest
+```
+
+**Backend:**
+```bash
+docker pull laurenciusmd/journalism-dashboard-backend:latest
+```
+
+### Manuelles Docker Build
+
+**Frontend bauen:**
+```bash
+cd frontend
+docker build -t journalism-dashboard-frontend .
+docker run -p 80:80 journalism-dashboard-frontend
+```
+
+**Backend bauen:**
+```bash
+cd backend
+docker build -t journalism-dashboard-backend .
+docker run -p 3001:3001 --env-file ../.env journalism-dashboard-backend
+```
+
+### Production Deployment
+
+Für Production-Deployments:
+
+1. Erstellen Sie eine `.env` Datei mit Production-Werten
+2. Verwenden Sie ein Reverse-Proxy (nginx/traefik) für HTTPS
+3. Konfigurieren Sie Health Checks und Monitoring
+4. Verwenden Sie Docker secrets für API-Keys
+
+Beispiel mit nginx Reverse Proxy:
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+
+  # ... frontend und backend services
+```
+
 ## Projekt-Struktur
 
 ```
@@ -168,17 +262,21 @@ POST /api/ai/openai/transform
 
 ## Roadmap
 
-- [ ] Basis-Dashboard-UI
+- [x] Basis-Dashboard-UI
+- [x] Docker Deployment
+- [x] GitHub Actions CI/CD
 - [ ] Claude AI Integration
 - [ ] Gemini Integration
 - [ ] ChatGPT Integration
 - [ ] Google Drive Verbindung
 - [ ] WebDAV Cloud-Storage
-- [ ] Artikel-Editor
+- [ ] Artikel-Editor mit Rich-Text
 - [ ] Recherche-Interface
 - [ ] Aufgabenverwaltung
 - [ ] Offline-Modus
 - [ ] Browser-Extension (optional)
+- [ ] Benutzerauthentifizierung
+- [ ] Artikel-Datenbank
 
 ## Sicherheit
 
