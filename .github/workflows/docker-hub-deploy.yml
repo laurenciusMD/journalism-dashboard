@@ -13,19 +13,11 @@ on:
 
 env:
   DOCKER_USERNAME: laurencius
+  IMAGE_NAME: journalism-dashboard
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service:
-          - name: frontend
-            context: ./frontend
-            image: journalism-dashboard-frontend
-          - name: backend
-            context: ./backend
-            image: journalism-dashboard-backend
 
     steps:
       - name: Checkout code
@@ -45,7 +37,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.DOCKER_USERNAME }}/${{ matrix.service.image }}
+          images: ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -58,8 +50,8 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.service.context }}
-          file: ${{ matrix.service.context }}/Dockerfile
+          context: .
+          file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -68,7 +60,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
       - name: Image digest
-        run: echo "Image pushed with digest ${{ steps.build-and-push.outputs.digest }}"
+        run: echo "Image pushed with digest ${{ steps.docker_build.outputs.digest }}"
 
   create-release:
     needs: build-and-push
@@ -89,14 +81,25 @@ jobs:
           body: |
             ## Journalism Dashboard Release ${{ github.ref_name }}
 
-            ### Docker Images
-            - Frontend: `docker pull ${{ env.DOCKER_USERNAME }}/journalism-dashboard-frontend:${{ github.ref_name }}`
-            - Backend: `docker pull ${{ env.DOCKER_USERNAME }}/journalism-dashboard-backend:${{ github.ref_name }}`
+            ### Docker Image
+            ```bash
+            docker pull ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+            ```
 
             ### Quick Start
             ```bash
+            # Using Docker Compose
             docker-compose up -d
+
+            # Or directly with Docker
+            docker run -p 3001:3001 \
+              -e ANTHROPIC_API_KEY=your_key \
+              -e GOOGLE_GEMINI_API_KEY=your_key \
+              -e OPENAI_API_KEY=your_key \
+              ${{ env.DOCKER_USERNAME }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
             ```
+
+            Access the dashboard at http://localhost:3001
 
             ### What's Changed
             See commits for details.

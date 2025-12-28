@@ -1,63 +1,37 @@
 version: '3.8'
 
 services:
-  backend:
+  journalism-dashboard:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    image: laurencius/journalism-dashboard-backend:latest
-    container_name: journalism-dashboard-backend
+    image: laurencius/journalism-dashboard:latest
+    container_name: journalism-dashboard
     restart: unless-stopped
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_GEMINI_API_KEY=${GOOGLE_GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3001/auth/google/callback}
       - WEBDAV_URL=${WEBDAV_URL}
       - WEBDAV_USERNAME=${WEBDAV_USERNAME}
       - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
       - SESSION_SECRET=${SESSION_SECRET}
-    networks:
-      - journalism-network
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 10s
+    # Optional: Add volumes for persistent data
+    # volumes:
+    #   - journalism-data:/app/data
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    image: laurencius/journalism-dashboard-frontend:latest
-    container_name: journalism-dashboard-frontend
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - journalism-network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
-      start_period: 5s
-
-networks:
-  journalism-network:
-    driver: bridge
-
-volumes:
-  # Optional: Add volumes for persistent data if needed
-  # journalism-data:
+# volumes:
+#   journalism-data:

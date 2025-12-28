@@ -1,6 +1,12 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ES module workaround for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -9,10 +15,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173'
-}));
 app.use(express.json());
+
+// CORS only for API routes
+app.use('/api', cors({
+  origin: process.env.FRONTEND_URL || '*'
+}));
+
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -97,12 +108,17 @@ app.get('/api/storage/webdav/list', async (req, res) => {
   }
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Route not found',
-    path: req.path
-  });
+// Serve index.html for all non-API routes (React Router support)
+app.get('*', (req, res) => {
+  // Only serve index.html for non-API routes
+  if (!req.path.startsWith('/api')) {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+  } else {
+    res.status(404).json({
+      error: 'API route not found',
+      path: req.path
+    });
+  }
 });
 
 // Error handler
@@ -118,15 +134,18 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════════════════╗
-║   📰 Journalism Dashboard API Server                 ║
+║   📰 Journalism Dashboard                            ║
 ║                                                       ║
 ║   🚀 Server running on http://localhost:${PORT}       ║
-║   🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}      ║
+║   📱 Dashboard UI: http://localhost:${PORT}           ║
+║   🔌 API: http://localhost:${PORT}/api               ║
 ║                                                       ║
-║   Ready to connect with:                             ║
+║   AI Integration ready:                              ║
 ║   ✓ Claude AI                                        ║
 ║   ✓ Google Gemini                                    ║
 ║   ✓ OpenAI ChatGPT                                   ║
+║                                                       ║
+║   Cloud Storage ready:                               ║
 ║   ✓ Google Drive                                     ║
 ║   ✓ Private Cloud (WebDAV)                           ║
 ╚═══════════════════════════════════════════════════════╝

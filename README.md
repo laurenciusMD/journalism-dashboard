@@ -81,6 +81,10 @@ Das Backend läuft auf `http://localhost:3001`
 
 ## Docker Deployment
 
+### Architektur: All-in-One Container
+
+Das Dashboard läuft in **einem einzigen Container**, der sowohl das Frontend (React UI) als auch das Backend (Node.js API) enthält. Perfekt optimiert für CasaOS und andere Home-Server-Umgebungen.
+
 ### Mit Docker Compose (empfohlen)
 
 1. **Umgebungsvariablen konfigurieren**
@@ -95,8 +99,8 @@ docker-compose up -d
 ```
 
 3. **Zugriff**
-- Frontend: `http://localhost`
-- Backend API: `http://localhost:3001`
+- **Dashboard UI:** `http://localhost:3001`
+- **API:** `http://localhost:3001/api`
 
 4. **Container verwalten**
 ```bash
@@ -113,35 +117,49 @@ docker-compose down
 docker-compose build --no-cache
 ```
 
-### Docker Hub Images
+### Docker Hub Image
 
-Die Images werden automatisch bei jedem Push auf `main` auf Docker Hub deployed:
+Das Image wird automatisch bei jedem Push auf `main` auf Docker Hub deployed:
 
-**Frontend:**
 ```bash
-docker pull laurencius/journalism-dashboard-frontend:latest
+docker pull laurencius/journalism-dashboard:latest
 ```
 
-**Backend:**
+### Direktes Docker Run (ohne docker-compose)
+
 ```bash
-docker pull laurencius/journalism-dashboard-backend:latest
+docker run -d \
+  --name journalism-dashboard \
+  -p 3001:3001 \
+  -e ANTHROPIC_API_KEY=your_claude_key \
+  -e GOOGLE_GEMINI_API_KEY=your_gemini_key \
+  -e OPENAI_API_KEY=your_openai_key \
+  laurencius/journalism-dashboard:latest
 ```
+
+Zugriff: `http://localhost:3001`
 
 ### Manuelles Docker Build
 
-**Frontend bauen:**
 ```bash
-cd frontend
-docker build -t journalism-dashboard-frontend .
-docker run -p 80:80 journalism-dashboard-frontend
+docker build -t journalism-dashboard .
+docker run -p 3001:3001 --env-file .env journalism-dashboard
 ```
 
-**Backend bauen:**
-```bash
-cd backend
-docker build -t journalism-dashboard-backend .
-docker run -p 3001:3001 --env-file ../.env journalism-dashboard-backend
-```
+### CasaOS Installation
+
+Perfekt für CasaOS - einfach als Custom App hinzufügen:
+
+1. In CasaOS → **App Store** → **Custom Install**
+2. Docker Image: `laurencius/journalism-dashboard:latest`
+3. Port Mapping: `3001:3001`
+4. Environment Variables hinzufügen:
+   - `ANTHROPIC_API_KEY`
+   - `GOOGLE_GEMINI_API_KEY`
+   - `OPENAI_API_KEY`
+5. Container starten
+
+Oder via CasaOS docker-compose Import: Laden Sie die `docker-compose.yml` aus dem Repository hoch.
 
 ### Production Deployment
 
@@ -150,28 +168,8 @@ Für Production-Deployments:
 1. Erstellen Sie eine `.env` Datei mit Production-Werten
 2. Verwenden Sie ein Reverse-Proxy (nginx/traefik) für HTTPS
 3. Konfigurieren Sie Health Checks und Monitoring
-4. Verwenden Sie Docker secrets für API-Keys
-
-Beispiel mit nginx Reverse Proxy:
-```yaml
-# docker-compose.prod.yml
-version: '3.8'
-
-services:
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "443:443"
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - frontend
-      - backend
-
-  # ... frontend und backend services
-```
+4. Nutzen Sie Docker secrets für API-Keys
+5. Optional: Mounten Sie ein Volume für persistente Daten
 
 ## Projekt-Struktur
 
@@ -267,8 +265,10 @@ POST /api/ai/openai/transform
 ## Roadmap
 
 - [x] Basis-Dashboard-UI
-- [x] Docker Deployment
+- [x] All-in-One Docker Container
+- [x] Docker Hub Automated Deployment
 - [x] GitHub Actions CI/CD
+- [x] CasaOS-optimierte Architektur
 - [ ] Claude AI Integration
 - [ ] Gemini Integration
 - [ ] ChatGPT Integration
