@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import './styles/App.css'
 import Login from './components/Login.jsx'
 import Register from './components/Register.jsx'
+import ResearchPanel from './components/ResearchPanel.jsx'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -119,6 +120,12 @@ function App() {
           🏠 Übersicht
         </button>
         <button
+          className={activeTab === 'research' ? 'nav-btn active' : 'nav-btn'}
+          onClick={() => setActiveTab('research')}
+        >
+          📁 Recherche
+        </button>
+        <button
           className={activeTab === 'summarize' ? 'nav-btn active' : 'nav-btn'}
           onClick={() => setActiveTab('summarize')}
         >
@@ -153,6 +160,7 @@ function App() {
       <main className="dashboard-content">
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
         {!showSettings && activeTab === 'overview' && <OverviewPanel setActiveTab={setActiveTab} />}
+        {!showSettings && activeTab === 'research' && <ResearchPanel />}
         {!showSettings && activeTab === 'summarize' && <SummarizePanel sharedContent={sharedContent} setSharedContent={setSharedContent} setActiveTab={setActiveTab} />}
         {!showSettings && activeTab === 'correct' && <CorrectPanel sharedContent={sharedContent} setSharedContent={setSharedContent} setActiveTab={setActiveTab} />}
         {!showSettings && activeTab === 'gpts' && <GPTsPanel sharedContent={sharedContent} setSharedContent={setSharedContent} setActiveTab={setActiveTab} />}
@@ -260,6 +268,12 @@ function OverviewPanel({ setActiveTab }) {
       <p className="panel-description">Ihr KI-gestützter Workflow für professionellen Journalismus</p>
 
       <div className="cards-grid">
+        <div className="feature-card card-research" onClick={() => setActiveTab('research')}>
+          <div className="card-icon">📁</div>
+          <h3>Recherche-Dossiers</h3>
+          <p>Investigative Recherchen verwalten: Personen, Beziehungen und Beweise strukturiert erfassen.</p>
+          <button className="card-btn">Öffnen →</button>
+        </div>
         <div className="feature-card card-purple" onClick={() => setActiveTab('summarize')}>
           <div className="card-icon">📊</div>
           <h3>Zusammenfassen (Claude)</h3>

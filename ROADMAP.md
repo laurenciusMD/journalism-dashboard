@@ -885,7 +885,1697 @@ volumes:
 
 ---
 
-## 7. Technische Umsetzung (Module)
+## 7. Personendatenbank & Medienmanagement
+
+### 7.1 Konzept: Person-Centric Investigation
+
+**Problem:**
+In investigativen Recherchen entstehen umfangreiche Informationen über Personen:
+- Aliase und Namensvarianten
+- Attribute mit unterschiedlicher Vertrauenswürdigkeit
+- Medienassets (Fotos, Videos) ohne klare Zuordnung
+- OSINT-Ergebnisse die manuell kuratiert werden müssen
+
+**Lösung:**
+Ein evidenzbasiertes Personensystem mit:
+- Kanonischen Personendateien
+- Attributen mit Quellenangaben
+- Manueller Medien-Zuordnung (kein automatisches Facial Recognition)
+- OSINT-Import-Workflow mit Bestätigung
+
+### 7.2 Datenmodell: Personen & Attribute
+
+```sql
+-- Personen (Canonical Entities)
+CREATE TABLE persons (
+  id UUID PRIMARY KEY,
+  dossier_id UUID REFERENCES dossiers(id),
+  canonical_name TEXT NOT NULL, -- "Max Mustermann"
+  aliases TEXT[], -- ["M. Mustermann", "Maximilian M."]
+  description TEXT,
+  confidence_score FLOAT DEFAULT 0.5, -- Wie sicher ist Identität?
+  merged_from UUID[], -- Falls Person aus mehreren zusammengeführt
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Attribute mit Evidence-Linking
+CREATE TABLE person_attributes (
+  id UUID PRIMARY KEY,
+  person_id UUID REFERENCES persons(id) ON DELETE CASCADE,
+  attribute_type TEXT NOT NULL, -- email, phone, address, role, affiliation
+  attribute_value TEXT NOT NULL,
+  confidence_score FLOAT DEFAULT 0.5,
+  valid_from DATE,
+  valid_to DATE,
+  source_type TEXT, -- osint, manual, document, interview
+  evidence_refs UUID[], -- Links zu evidence_items
+  notes TEXT,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMP DEFAULT NOW(),
+  verified BOOLEAN DEFAULT false -- Manuell bestätigt?
+);
+
+-- Beziehungen zwischen Personen
+CREATE TABLE person_relationships (
+  id UUID PRIMARY KEY,
+  dossier_id UUID REFERENCES dossiers(id),
+  person_a_id UUID REFERENCES persons(id) ON DELETE CASCADE,
+  person_b_id UUID REFERENCES persons(id) ON DELETE CASCADE,
+  relationship_type TEXT, -- colleague, family, business_partner, adversary
+  description TEXT,
+  confidence_score FLOAT DEFAULT 0.5,
+  evidence_refs UUID[],
+  valid_from DATE,
+  valid_to DATE,
+  created_at TIMESTAMP DEFAULT NOW(),
+
+  -- Prevent duplicate relationships
+  CONSTRAINT unique_relationship UNIQUE (person_a_id, person_b_id, relationship_type)
+);
+
+-- Medienassets (Bilder, Videos, Audio)
+CREATE TABLE media_assets (
+  id UUID PRIMARY KEY,
+  dossier_id UUID REFERENCES dossiers(id),
+  file_type TEXT NOT NULL, -- image, video, audio
+  file_path TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  file_size BIGINT,
+  mime_type TEXT,
+  sha256 TEXT UNIQUE NOT NULL, -- Deduplication
+  width INTEGER,
+  height INTEGER,
+  duration_seconds INTEGER, -- für Video/Audio
+
+  -- EXIF/Metadata
+  captured_at TIMESTAMP,
+  camera_model TEXT,
+  gps_latitude FLOAT,
+  gps_longitude FLOAT,
+  metadata JSONB, -- Vollständige EXIF
+
+  -- Provenance
+  source_url TEXT,
+  uploaded_by UUID REFERENCES users(id),
+  upload_method TEXT, -- url_download, manual_upload, osint_tool
+  uploaded_at TIMESTAMP DEFAULT NOW(),
+
+  -- Organization
+  tags TEXT[],
+  notes TEXT,
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Gesichtserkennung (Detection, NICHT Recognition)
+CREATE TABLE detected_faces (
+  id UUID PRIMARY KEY,
+  media_asset_id UUID REFERENCES media_assets(id) ON DELETE CASCADE,
+
+  -- Bounding Box (Koordinaten)
+  bbox_x INTEGER NOT NULL,
+  bbox_y INTEGER NOT NULL,
+  bbox_width INTEGER NOT NULL,
+  bbox_height INTEGER NOT NULL,
+
+  -- Detection Qualität
+  detection_confidence FLOAT, -- 0.0 - 1.0
+  face_quality_score FLOAT, -- Schärfe, Winkel, Beleuchtung
+
+  -- Face Crop (für Review)
+  crop_file_path TEXT, -- Ausgeschnittenes Gesicht als separate Datei
+
+  -- Status
+  reviewed BOOLEAN DEFAULT false,
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Manuelle Face-to-Person Zuordnung (KEIN Automatic Tagging!)
+CREATE TABLE face_annotations (
+  id UUID PRIMARY KEY,
+  detected_face_id UUID REFERENCES detected_faces(id) ON DELETE CASCADE,
+  person_id UUID REFERENCES persons(id) ON DELETE CASCADE,
+
+  -- Metadata
+  annotated_by UUID REFERENCES users(id) NOT NULL,
+  annotated_at TIMESTAMP DEFAULT NOW(),
+  confidence TEXT, -- certain, probable, uncertain
+  notes TEXT,
+
+  -- Prevent duplicate annotations
+  CONSTRAINT unique_face_annotation UNIQUE (detected_face_id, person_id)
+);
+
+-- Person-Media Verknüpfung (auch ohne Face Detection)
+CREATE TABLE person_media (
+  id UUID PRIMARY KEY,
+  person_id UUID REFERENCES persons(id) ON DELETE CASCADE,
+  media_asset_id UUID REFERENCES media_assets(id) ON DELETE CASCADE,
+
+  -- Context
+  appears_in_media BOOLEAN DEFAULT true, -- Person ist im Bild/Video
+  context TEXT, -- "Pressekonferenz 2023", "Meeting in Hamburg"
+  timestamp_in_media INTEGER, -- Sekunde im Video
+
+  -- Source
+  tagged_by UUID REFERENCES users(id),
+  tagged_at TIMESTAMP DEFAULT NOW(),
+
+  CONSTRAINT unique_person_media UNIQUE (person_id, media_asset_id)
+);
+
+-- OSINT Import Inbox (Findings Before Confirmation)
+CREATE TABLE osint_findings (
+  id UUID PRIMARY KEY,
+  dossier_id UUID REFERENCES dossiers(id),
+  tool_run_id UUID REFERENCES tool_runs(id),
+
+  -- What was found
+  finding_type TEXT, -- email, phone, social_profile, address, breach
+  finding_value TEXT NOT NULL,
+  finding_context TEXT,
+
+  -- Suggested mapping
+  suggested_person_id UUID REFERENCES persons(id), -- Falls Matching möglich
+  confidence_score FLOAT,
+
+  -- Status
+  status TEXT DEFAULT 'pending', -- pending, accepted, rejected, merged
+  reviewed_by UUID REFERENCES users(id),
+  reviewed_at TIMESTAMP,
+
+  -- If accepted, link to created attribute
+  person_attribute_id UUID REFERENCES person_attributes(id),
+
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Merge Log (Deduplication History)
+CREATE TABLE person_merge_log (
+  id UUID PRIMARY KEY,
+  dossier_id UUID REFERENCES dossiers(id),
+  primary_person_id UUID REFERENCES persons(id), -- Behalten
+  merged_person_id UUID NOT NULL, -- Wurde entfernt (ID bleibt in merged_from)
+  reason TEXT,
+  merged_by UUID REFERENCES users(id),
+  merged_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### 7.3 OSINT → Person Import Workflow
+
+**Problem:** OSINT-Tools liefern Rohdaten die oft:
+- False Positives enthalten
+- Mehrere Personen betreffen
+- Unklare Zuordnung haben
+
+**Lösung: Inbox-System**
+
+```
+┌─────────────────┐
+│  OSINT Tool Run │
+│  (theHarvester) │
+└────────┬────────┘
+         │
+         │ Findet: info@example.com, max.m@corp.de
+         ▼
+┌─────────────────────────┐
+│  osint_findings         │
+│  Status: pending        │
+│                         │
+│  1. info@example.com    │
+│     → No Match          │
+│                         │
+│  2. max.m@corp.de       │
+│     → Suggested: "Max M"│
+│     → Confidence: 0.7   │
+└────────┬────────────────┘
+         │
+         │ User reviews in UI
+         ▼
+┌─────────────────────────┐
+│  Review Interface       │
+│                         │
+│  [Accept] [Reject] [New]│
+└────────┬────────────────┘
+         │
+         │ User accepts #2
+         ▼
+┌─────────────────────────┐
+│  person_attributes      │
+│                         │
+│  person_id: Max M       │
+│  type: email            │
+│  value: max.m@corp.de   │
+│  source_type: osint     │
+│  evidence_refs: [...]   │
+│  verified: true         │
+└─────────────────────────┘
+```
+
+**Mapping Rules (Beispiel theHarvester):**
+
+```javascript
+// backend/src/services/osintPersonMapper.js
+
+const MAPPING_RULES = {
+  'theHarvester': {
+    'emails': {
+      attribute_type: 'email',
+      confidence: 0.8,
+      auto_match_strategy: 'email_domain' // Versuche Email mit bekannten Personen zu matchen
+    },
+    'hosts': {
+      attribute_type: 'domain',
+      confidence: 0.9,
+      auto_match_strategy: 'none' // Domains sind nicht personenbezogen
+    },
+    'linkedin_profiles': {
+      attribute_type: 'social_profile',
+      confidence: 0.9,
+      auto_match_strategy: 'name_similarity' // Name aus Profil
+    }
+  },
+
+  'SpiderFoot': {
+    'EMAILADDR': {
+      attribute_type: 'email',
+      confidence: 0.8,
+      auto_match_strategy: 'email_domain'
+    },
+    'BREACH': {
+      attribute_type: 'data_breach',
+      confidence: 0.95,
+      auto_match_strategy: 'email_exact' // Breach bezieht sich auf Email
+    },
+    'PHONE_NUMBER': {
+      attribute_type: 'phone',
+      confidence: 0.7,
+      auto_match_strategy: 'none' // Telefonnummern schwer zuzuordnen
+    }
+  }
+};
+
+class OSINTPersonMapper {
+  async processFinding(toolRun, rawFinding) {
+    const rule = MAPPING_RULES[toolRun.tool_id][rawFinding.type];
+
+    if (!rule) {
+      console.warn(`No mapping rule for ${toolRun.tool_id}:${rawFinding.type}`);
+      return null;
+    }
+
+    // 1. Create finding in inbox
+    const finding = await db.insert('osint_findings', {
+      dossier_id: toolRun.dossier_id,
+      tool_run_id: toolRun.id,
+      finding_type: rule.attribute_type,
+      finding_value: rawFinding.value,
+      finding_context: rawFinding.context,
+      confidence_score: rule.confidence
+    });
+
+    // 2. Try auto-matching (suggested person)
+    const suggestedPerson = await this.autoMatch(
+      toolRun.dossier_id,
+      rawFinding,
+      rule.auto_match_strategy
+    );
+
+    if (suggestedPerson) {
+      await db.update('osint_findings', finding.id, {
+        suggested_person_id: suggestedPerson.id
+      });
+    }
+
+    return finding;
+  }
+
+  async autoMatch(dossierId, finding, strategy) {
+    switch (strategy) {
+      case 'email_domain':
+        // Finde Personen die bereits Emails mit gleicher Domain haben
+        const domain = finding.value.split('@')[1];
+        return await db.query(`
+          SELECT DISTINCT p.* FROM persons p
+          JOIN person_attributes pa ON pa.person_id = p.id
+          WHERE p.dossier_id = $1
+            AND pa.attribute_type = 'email'
+            AND pa.attribute_value LIKE '%@' || $2
+          LIMIT 1
+        `, [dossierId, domain]);
+
+      case 'name_similarity':
+        // Verwende String-Ähnlichkeit (Levenshtein)
+        const extractedName = this.extractNameFromProfile(finding.value);
+        return await db.query(`
+          SELECT * FROM persons
+          WHERE dossier_id = $1
+            AND similarity(canonical_name, $2) > 0.6
+          ORDER BY similarity(canonical_name, $2) DESC
+          LIMIT 1
+        `, [dossierId, extractedName]);
+
+      case 'email_exact':
+        // Exakte Email-Match
+        return await db.query(`
+          SELECT p.* FROM persons p
+          JOIN person_attributes pa ON pa.person_id = p.id
+          WHERE p.dossier_id = $1
+            AND pa.attribute_type = 'email'
+            AND pa.attribute_value = $2
+          LIMIT 1
+        `, [dossierId, finding.value]);
+
+      case 'none':
+      default:
+        return null;
+    }
+  }
+}
+```
+
+### 7.4 Mass Image Ingestion
+
+**Use Case:** Recherche liefert 200 Fotos von einer Veranstaltung. Alle müssen:
+- Heruntergeladen werden
+- Dedupliziert werden (SHA256)
+- Metadaten extrahiert
+- Face Detection durchlaufen
+- Manuell gesichtet werden
+
+**Umsetzung:**
+
+#### 7.4.1 URL-basierter Download
+
+**Frontend:**
+```jsx
+// components/MediaIngestion.jsx
+
+function BulkURLDownload() {
+  const [urls, setUrls] = useState('');
+  const [jobId, setJobId] = useState(null);
+
+  const handleSubmit = async () => {
+    const urlList = urls.split('\n').filter(u => u.trim());
+
+    const response = await fetch('/api/media/bulk-download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        dossier_id: currentDossier.id,
+        urls: urlList,
+        tags: ['import_2024_01'],
+        extract_exif: true,
+        run_face_detection: true
+      })
+    });
+
+    const { job_id } = await response.json();
+    setJobId(job_id);
+    // Poll job status
+  };
+
+  return (
+    <div>
+      <h3>Bulk Image Download</h3>
+      <textarea
+        placeholder="Paste image URLs (one per line)"
+        value={urls}
+        onChange={(e) => setUrls(e.target.value)}
+        rows={10}
+      />
+      <button onClick={handleSubmit}>Download {urls.split('\n').length} Images</button>
+    </div>
+  );
+}
+```
+
+**Backend:**
+```javascript
+// routes/media.js
+
+router.post('/bulk-download', async (req, res) => {
+  const { dossier_id, urls, tags, extract_exif, run_face_detection } = req.body;
+
+  // Validate access to dossier
+  const dossier = await db.findById('dossiers', dossier_id);
+  if (!dossier) return res.status(404).json({ error: 'Dossier not found' });
+
+  // Create job
+  const job = await mediaQueue.add('bulk-download', {
+    dossier_id,
+    urls,
+    tags,
+    extract_exif,
+    run_face_detection,
+    user_id: req.session.userId
+  });
+
+  res.json({ job_id: job.id, status: 'queued' });
+});
+```
+
+**Worker:**
+```javascript
+// workers/mediaWorker.js
+
+const queue = new Bull('media-jobs', { redis: redisConfig });
+
+queue.process('bulk-download', async (job) => {
+  const { dossier_id, urls, tags, extract_exif, run_face_detection, user_id } = job.data;
+
+  const results = {
+    downloaded: 0,
+    duplicates: 0,
+    errors: 0,
+    media_ids: []
+  };
+
+  for (const url of urls) {
+    try {
+      job.progress((urls.indexOf(url) / urls.length) * 100);
+
+      // 1. Download
+      const response = await axios.get(url, { responseType: 'arraybuffer' });
+      const buffer = Buffer.from(response.data);
+
+      // 2. SHA256 hash
+      const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+      // 3. Check if exists
+      const existing = await db.findOne('media_assets', { sha256: hash });
+      if (existing) {
+        results.duplicates++;
+        continue;
+      }
+
+      // 4. Extract metadata
+      let metadata = {};
+      let width, height, captured_at;
+
+      if (extract_exif) {
+        const exif = await exifReader.load(buffer);
+        metadata = exif;
+        width = exif.ImageWidth;
+        height = exif.ImageHeight;
+        captured_at = exif.DateTimeOriginal;
+      } else {
+        const dimensions = await sharp(buffer).metadata();
+        width = dimensions.width;
+        height = dimensions.height;
+      }
+
+      // 5. Save file
+      const fileName = `${hash}.${mime.extension(response.headers['content-type'])}`;
+      const filePath = `/evidence/media/${dossier_id}/${fileName}`;
+      await fs.writeFile(filePath, buffer);
+
+      // 6. Create database entry
+      const media = await db.insert('media_assets', {
+        dossier_id,
+        file_type: 'image',
+        file_path: filePath,
+        file_name: fileName,
+        file_size: buffer.length,
+        mime_type: response.headers['content-type'],
+        sha256: hash,
+        width,
+        height,
+        captured_at,
+        metadata,
+        source_url: url,
+        uploaded_by: user_id,
+        upload_method: 'url_download',
+        tags
+      });
+
+      results.media_ids.push(media.id);
+      results.downloaded++;
+
+      // 7. Queue face detection if requested
+      if (run_face_detection) {
+        await faceDetectionQueue.add('detect-faces', {
+          media_asset_id: media.id,
+          file_path: filePath
+        });
+      }
+
+    } catch (error) {
+      console.error(`Failed to download ${url}:`, error);
+      results.errors++;
+    }
+  }
+
+  return results;
+});
+```
+
+#### 7.4.2 Drag-and-Drop Upload
+
+**Frontend:**
+```jsx
+// components/MediaUpload.jsx
+
+function MediaUpload({ dossierId }) {
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleDrop = async (acceptedFiles) => {
+    setUploading(true);
+    const formData = new FormData();
+
+    formData.append('dossier_id', dossierId);
+    acceptedFiles.forEach(file => formData.append('files', file));
+
+    const xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener('progress', (e) => {
+      setProgress((e.loaded / e.total) * 100);
+    });
+
+    xhr.addEventListener('load', () => {
+      const response = JSON.parse(xhr.responseText);
+      console.log('Upload complete:', response);
+      setUploading(false);
+    });
+
+    xhr.open('POST', '/api/media/upload');
+    xhr.send(formData);
+  };
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop: handleDrop,
+    accept: 'image/*,video/*'
+  });
+
+  return (
+    <div {...getRootProps()} className="dropzone">
+      <input {...getInputProps()} />
+      {uploading ? (
+        <p>Uploading... {progress.toFixed(0)}%</p>
+      ) : (
+        <p>Drag & drop images/videos here, or click to select files</p>
+      )}
+    </div>
+  );
+}
+```
+
+**Backend:**
+```javascript
+// routes/media.js
+
+const multer = require('multer');
+const upload = multer({ dest: '/tmp/uploads/' });
+
+router.post('/upload', upload.array('files'), async (req, res) => {
+  const { dossier_id } = req.body;
+  const files = req.files;
+
+  const results = {
+    uploaded: 0,
+    duplicates: 0,
+    media_ids: []
+  };
+
+  for (const file of files) {
+    const buffer = await fs.readFile(file.path);
+    const hash = crypto.createHash('sha256').update(buffer).digest('hex');
+
+    // Check duplicate
+    const existing = await db.findOne('media_assets', { sha256: hash });
+    if (existing) {
+      results.duplicates++;
+      await fs.unlink(file.path);
+      continue;
+    }
+
+    // Extract metadata (same as bulk-download)
+    const metadata = await extractMetadata(buffer, file.mimetype);
+
+    // Move to permanent storage
+    const fileName = `${hash}.${mime.extension(file.mimetype)}`;
+    const filePath = `/evidence/media/${dossier_id}/${fileName}`;
+    await fs.rename(file.path, filePath);
+
+    // Create database entry
+    const media = await db.insert('media_assets', {
+      dossier_id,
+      file_type: file.mimetype.startsWith('video') ? 'video' : 'image',
+      file_path: filePath,
+      file_name: file.originalname,
+      file_size: file.size,
+      mime_type: file.mimetype,
+      sha256: hash,
+      ...metadata,
+      uploaded_by: req.session.userId,
+      upload_method: 'manual_upload'
+    });
+
+    results.media_ids.push(media.id);
+    results.uploaded++;
+
+    // Queue face detection
+    await faceDetectionQueue.add('detect-faces', {
+      media_asset_id: media.id,
+      file_path: filePath
+    });
+  }
+
+  res.json(results);
+});
+```
+
+### 7.5 Face Detection (Organization, NOT Recognition)
+
+**WICHTIG:** Wir verwenden Face **Detection** (Gesichter finden), NICHT Face Recognition (Gesichter identifizieren).
+
+**Ethische Grenzen:**
+- ✅ Erlaubt: Bounding Boxes um Gesichter zeichnen
+- ✅ Erlaubt: Gesichts-Crops für manuelle Sichtung
+- ✅ Erlaubt: Qualitätsscores (scharf/unscharf, frontal/Profil)
+- ❌ NICHT: Automatische Zuordnung "Das ist Person X"
+- ❌ NICHT: Gesichtserkennung-Datenbank
+- ❌ NICHT: Matching gegen externe Datenbanken
+
+**Technologie:**
+- Library: `face_detection` (Python, Dlib-basiert) ODER `opencv` mit Haar Cascades
+- NICHT: `face_recognition`, `deepface`, `insightface` (zu mächtig)
+
+#### 7.5.1 Detection Worker
+
+**Python Worker:**
+```python
+# workers/face_detection_worker.py
+
+import face_detection
+from PIL import Image
+import json
+import sys
+
+def detect_faces(image_path):
+    """
+    Findet Gesichter in einem Bild und gibt Bounding Boxes zurück.
+    Kein Recognition, nur Detection!
+    """
+    detector = face_detection.build_detector(
+        "RetinaNetResNet50",
+        confidence_threshold=0.5
+    )
+
+    image = Image.open(image_path)
+    detections = detector.detect(image)
+
+    results = []
+    for i, detection in enumerate(detections):
+        bbox = detection[:4]  # x1, y1, x2, y2
+        confidence = detection[4]
+
+        # Crop face for preview
+        x1, y1, x2, y2 = map(int, bbox)
+        face_crop = image.crop((x1, y1, x2, y2))
+
+        # Calculate quality score
+        quality = calculate_quality(face_crop)
+
+        results.append({
+            'bbox': {
+                'x': x1,
+                'y': y1,
+                'width': x2 - x1,
+                'height': y2 - y1
+            },
+            'confidence': float(confidence),
+            'quality_score': quality,
+            'crop_data': face_crop  # PIL Image object
+        })
+
+    return results
+
+def calculate_quality(face_crop):
+    """
+    Bewertet Gesichts-Qualität (Schärfe, Größe).
+    Keine biometrischen Features!
+    """
+    import cv2
+    import numpy as np
+
+    # Convert to grayscale
+    gray = cv2.cvtColor(np.array(face_crop), cv2.COLOR_RGB2GRAY)
+
+    # Laplacian variance (Schärfe)
+    laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+    sharpness = min(laplacian_var / 100.0, 1.0)
+
+    # Size score
+    width, height = face_crop.size
+    size_score = min((width * height) / 10000, 1.0)
+
+    # Combined quality
+    quality = (sharpness * 0.6 + size_score * 0.4)
+
+    return round(quality, 2)
+
+if __name__ == '__main__':
+    image_path = sys.argv[1]
+    output_path = sys.argv[2]
+
+    results = detect_faces(image_path)
+
+    # Save crops and metadata
+    crops = []
+    for i, result in enumerate(results):
+        crop_file = f"{output_path}/face_{i}.jpg"
+        result['crop_data'].save(crop_file, 'JPEG')
+        result['crop_file'] = crop_file
+        del result['crop_data']  # Remove PIL object for JSON
+        crops.append(result)
+
+    # Output JSON
+    print(json.dumps(crops))
+```
+
+**Node.js Worker Integration:**
+```javascript
+// workers/faceDetectionWorker.js
+
+const queue = new Bull('face-detection', { redis: redisConfig });
+
+queue.process('detect-faces', async (job) => {
+  const { media_asset_id, file_path } = job.data;
+
+  // 1. Get media asset
+  const media = await db.findById('media_assets', media_asset_id);
+  if (!media) throw new Error('Media asset not found');
+
+  // 2. Create output directory
+  const outputDir = `/evidence/faces/${media_asset_id}`;
+  await fs.mkdir(outputDir, { recursive: true });
+
+  // 3. Run Python detector
+  const { stdout } = await execAsync(`python3 workers/face_detection_worker.py "${file_path}" "${outputDir}"`);
+
+  const detections = JSON.parse(stdout);
+
+  // 4. Store detections in database
+  const faceIds = [];
+  for (const detection of detections) {
+    const face = await db.insert('detected_faces', {
+      media_asset_id,
+      bbox_x: detection.bbox.x,
+      bbox_y: detection.bbox.y,
+      bbox_width: detection.bbox.width,
+      bbox_height: detection.bbox.height,
+      detection_confidence: detection.confidence,
+      face_quality_score: detection.quality_score,
+      crop_file_path: detection.crop_file,
+      reviewed: false
+    });
+
+    faceIds.push(face.id);
+  }
+
+  return { faces_detected: faceIds.length, face_ids: faceIds };
+});
+```
+
+#### 7.5.2 Face Review UI
+
+**Frontend:**
+```jsx
+// components/FaceReview.jsx
+
+function FaceReviewGallery({ dossierId }) {
+  const [faces, setFaces] = useState([]);
+  const [filter, setFilter] = useState('unreviewed');
+
+  useEffect(() => {
+    fetchFaces();
+  }, [filter]);
+
+  const fetchFaces = async () => {
+    const response = await fetch(`/api/dossiers/${dossierId}/faces?filter=${filter}`);
+    const data = await response.json();
+    setFaces(data.faces);
+  };
+
+  const handleTagFace = async (faceId, personId) => {
+    await fetch('/api/faces/annotate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        detected_face_id: faceId,
+        person_id: personId,
+        confidence: 'certain'
+      })
+    });
+
+    // Mark as reviewed
+    await fetch(`/api/faces/${faceId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reviewed: true })
+    });
+
+    fetchFaces(); // Refresh
+  };
+
+  return (
+    <div className="face-review">
+      <div className="filters">
+        <button onClick={() => setFilter('unreviewed')}>
+          Unreviewed ({faces.filter(f => !f.reviewed).length})
+        </button>
+        <button onClick={() => setFilter('all')}>All</button>
+      </div>
+
+      <div className="face-grid">
+        {faces.map(face => (
+          <FaceCard key={face.id} face={face} onTag={handleTagFace} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function FaceCard({ face, onTag }) {
+  const [showTagModal, setShowTagModal] = useState(false);
+
+  return (
+    <div className="face-card">
+      <img src={`/evidence${face.crop_file_path}`} alt="Detected face" />
+
+      <div className="face-info">
+        <span>Quality: {(face.face_quality_score * 100).toFixed(0)}%</span>
+        <span>Confidence: {(face.detection_confidence * 100).toFixed(0)}%</span>
+      </div>
+
+      {face.annotations.length > 0 ? (
+        <div className="tagged">
+          Tagged: {face.annotations.map(a => a.person_name).join(', ')}
+        </div>
+      ) : (
+        <button onClick={() => setShowTagModal(true)}>Tag Person</button>
+      )}
+
+      {showTagModal && (
+        <PersonTagModal
+          face={face}
+          onTag={(personId) => {
+            onTag(face.id, personId);
+            setShowTagModal(false);
+          }}
+          onClose={() => setShowTagModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function PersonTagModal({ face, onTag, onClose }) {
+  const [persons, setPersons] = useState([]);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    fetchPersons();
+  }, [search]);
+
+  const fetchPersons = async () => {
+    const response = await fetch(`/api/persons?search=${search}`);
+    const data = await response.json();
+    setPersons(data.persons);
+  };
+
+  return (
+    <div className="modal">
+      <div className="modal-content">
+        <h3>Tag Face to Person</h3>
+
+        <img src={`/evidence${face.crop_file_path}`} width={150} />
+
+        <input
+          type="text"
+          placeholder="Search person..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <div className="person-list">
+          {persons.map(person => (
+            <div key={person.id} onClick={() => onTag(person.id)}>
+              {person.canonical_name}
+              {person.aliases.length > 0 && (
+                <span className="aliases">({person.aliases.join(', ')})</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+```
+
+#### 7.5.3 Face Strip View (Schnellsichtung)
+
+**Konzept:** Alle Gesichter nebeneinander, schnelles Durchklicken
+
+```jsx
+// components/FaceStripView.jsx
+
+function FaceStripView({ dossierId }) {
+  const [faces, setFaces] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    fetchUnreviewedFaces();
+  }, []);
+
+  const fetchUnreviewedFaces = async () => {
+    const response = await fetch(`/api/dossiers/${dossierId}/faces?filter=unreviewed&sort=quality_desc`);
+    const data = await response.json();
+    setFaces(data.faces);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'ArrowRight') {
+      setCurrentIndex(Math.min(currentIndex + 1, faces.length - 1));
+    } else if (e.key === 'ArrowLeft') {
+      setCurrentIndex(Math.max(currentIndex - 1, 0));
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentIndex]);
+
+  const currentFace = faces[currentIndex];
+
+  if (!currentFace) return <div>No faces to review</div>;
+
+  return (
+    <div className="face-strip-view">
+      <div className="strip-header">
+        Face {currentIndex + 1} of {faces.length}
+      </div>
+
+      {/* Thumbnail strip */}
+      <div className="thumbnails">
+        {faces.map((face, i) => (
+          <img
+            key={face.id}
+            src={`/evidence${face.crop_file_path}`}
+            className={i === currentIndex ? 'active' : ''}
+            onClick={() => setCurrentIndex(i)}
+          />
+        ))}
+      </div>
+
+      {/* Large view */}
+      <div className="face-large">
+        <img src={`/evidence${currentFace.crop_file_path}`} />
+
+        <div className="face-actions">
+          <PersonQuickTag
+            faceId={currentFace.id}
+            onTagged={() => {
+              setCurrentIndex(currentIndex + 1);
+              fetchUnreviewedFaces(); // Refresh list
+            }}
+          />
+
+          <button onClick={() => markAsReviewed(currentFace.id)}>
+            Skip
+          </button>
+        </div>
+      </div>
+
+      {/* Source image context */}
+      <div className="source-context">
+        <img src={`/evidence${currentFace.media_asset.file_path}`} />
+        {/* Draw bounding box overlay */}
+      </div>
+    </div>
+  );
+}
+```
+
+### 7.6 Research Visualizations
+
+#### 7.6.1 Person File Timeline
+
+**Konzept:** Chronologische Ansicht aller Ereignisse/Attribute einer Person
+
+```jsx
+// components/PersonTimeline.jsx
+
+import { Timeline } from 'vis-timeline';
+
+function PersonTimeline({ personId }) {
+  const timelineRef = useRef(null);
+  const [events, setEvents] = useState([]);
+
+  useEffect(() => {
+    fetchPersonEvents();
+  }, [personId]);
+
+  const fetchPersonEvents = async () => {
+    const response = await fetch(`/api/persons/${personId}/timeline`);
+    const data = await response.json();
+    setEvents(data.events);
+  };
+
+  useEffect(() => {
+    if (!events.length) return;
+
+    const items = events.map(event => ({
+      id: event.id,
+      content: event.title,
+      start: event.date,
+      type: 'box',
+      className: event.type // attribute, relationship, media, event
+    }));
+
+    const timeline = new Timeline(timelineRef.current, items, {
+      zoomMin: 1000 * 60 * 60 * 24 * 30, // 1 month
+      zoomMax: 1000 * 60 * 60 * 24 * 365 * 10 // 10 years
+    });
+
+    timeline.on('select', (properties) => {
+      const eventId = properties.items[0];
+      const event = events.find(e => e.id === eventId);
+      showEventDetails(event);
+    });
+  }, [events]);
+
+  return (
+    <div className="person-timeline">
+      <div ref={timelineRef} style={{ height: '400px' }}></div>
+    </div>
+  );
+}
+```
+
+**Backend Endpoint:**
+```javascript
+// routes/persons.js
+
+router.get('/:id/timeline', async (req, res) => {
+  const { id } = req.params;
+
+  const events = [];
+
+  // 1. Attributes with dates
+  const attributes = await db.query(`
+    SELECT id, attribute_type, attribute_value, valid_from, valid_to, created_at
+    FROM person_attributes
+    WHERE person_id = $1 AND (valid_from IS NOT NULL OR valid_to IS NOT NULL)
+    ORDER BY COALESCE(valid_from, created_at)
+  `, [id]);
+
+  attributes.forEach(attr => {
+    events.push({
+      id: `attr_${attr.id}`,
+      type: 'attribute',
+      title: `${attr.attribute_type}: ${attr.attribute_value}`,
+      date: attr.valid_from || attr.created_at,
+      details: attr
+    });
+  });
+
+  // 2. Relationships
+  const relationships = await db.query(`
+    SELECT r.*, p.canonical_name as other_person
+    FROM person_relationships r
+    JOIN persons p ON (p.id = r.person_b_id AND r.person_a_id = $1) OR (p.id = r.person_a_id AND r.person_b_id = $1)
+    WHERE $1 IN (r.person_a_id, r.person_b_id)
+      AND r.valid_from IS NOT NULL
+    ORDER BY r.valid_from
+  `, [id]);
+
+  relationships.forEach(rel => {
+    events.push({
+      id: `rel_${rel.id}`,
+      type: 'relationship',
+      title: `${rel.relationship_type} with ${rel.other_person}`,
+      date: rel.valid_from,
+      details: rel
+    });
+  });
+
+  // 3. Media appearances
+  const media = await db.query(`
+    SELECT ma.*, pm.context, pm.tagged_at
+    FROM person_media pm
+    JOIN media_assets ma ON ma.id = pm.media_asset_id
+    WHERE pm.person_id = $1
+      AND ma.captured_at IS NOT NULL
+    ORDER BY ma.captured_at
+  `, [id]);
+
+  media.forEach(m => {
+    events.push({
+      id: `media_${m.id}`,
+      type: 'media',
+      title: `Photo: ${m.context || m.file_name}`,
+      date: m.captured_at,
+      details: m
+    });
+  });
+
+  // Sort by date
+  events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  res.json({ events });
+});
+```
+
+#### 7.6.2 Case Overview Dashboard
+
+```jsx
+// components/CaseOverview.jsx
+
+function CaseOverview({ dossierId }) {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    fetchStats();
+  }, [dossierId]);
+
+  const fetchStats = async () => {
+    const response = await fetch(`/api/dossiers/${dossierId}/stats`);
+    const data = await response.json();
+    setStats(data);
+  };
+
+  if (!stats) return <div>Loading...</div>;
+
+  return (
+    <div className="case-overview">
+      <h2>{stats.dossier.title}</h2>
+
+      <div className="stats-grid">
+        <StatCard
+          icon="👤"
+          title="Persons"
+          count={stats.persons.total}
+          details={[
+            `${stats.persons.with_photo} with photos`,
+            `${stats.persons.high_confidence} verified`
+          ]}
+        />
+
+        <StatCard
+          icon="📄"
+          title="Sources"
+          count={stats.sources.total}
+          details={[
+            `${stats.sources.verified} verified`,
+            `${stats.sources.web} web, ${stats.sources.documents} documents`
+          ]}
+        />
+
+        <StatCard
+          icon="📷"
+          title="Media"
+          count={stats.media.total}
+          details={[
+            `${stats.media.faces_detected} faces detected`,
+            `${stats.media.faces_tagged} faces tagged`
+          ]}
+        />
+
+        <StatCard
+          icon="🔗"
+          title="Relationships"
+          count={stats.relationships.total}
+          details={[
+            `${stats.relationships.confirmed} confirmed`,
+            `${stats.relationships.types} types`
+          ]}
+        />
+      </div>
+
+      <div className="recent-activity">
+        <h3>Recent Activity</h3>
+        <ActivityFeed dossierId={dossierId} limit={10} />
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ icon, title, count, details }) {
+  return (
+    <div className="stat-card">
+      <div className="stat-icon">{icon}</div>
+      <div className="stat-content">
+        <h3>{count}</h3>
+        <p>{title}</p>
+        {details.map((detail, i) => (
+          <small key={i}>{detail}</small>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+#### 7.6.3 Relationship Graph with Evidence
+
+```jsx
+// components/RelationshipGraph.jsx
+
+import Cytoscape from 'cytoscape';
+
+function RelationshipGraph({ dossierId, focusPersonId }) {
+  const cyRef = useRef(null);
+  const [graph, setGraph] = useState({ nodes: [], edges: [] });
+
+  useEffect(() => {
+    fetchGraph();
+  }, [dossierId, focusPersonId]);
+
+  const fetchGraph = async () => {
+    const response = await fetch(`/api/dossiers/${dossierId}/relationship-graph?focus=${focusPersonId || ''}`);
+    const data = await response.json();
+    setGraph(data);
+  };
+
+  useEffect(() => {
+    if (!graph.nodes.length) return;
+
+    const cy = Cytoscape({
+      container: cyRef.current,
+
+      elements: [
+        ...graph.nodes.map(node => ({
+          data: {
+            id: node.id,
+            label: node.name,
+            confidence: node.confidence_score
+          },
+          classes: node.id === focusPersonId ? 'focus' : ''
+        })),
+
+        ...graph.edges.map(edge => ({
+          data: {
+            source: edge.from,
+            target: edge.to,
+            label: edge.relationship_type,
+            confidence: edge.confidence_score,
+            evidence_count: edge.evidence_refs.length
+          }
+        }))
+      ],
+
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'label': 'data(label)',
+            'background-color': '#0074D9',
+            'width': (ele) => 30 + (ele.data('confidence') * 20),
+            'height': (ele) => 30 + (ele.data('confidence') * 20)
+          }
+        },
+        {
+          selector: 'node.focus',
+          style: {
+            'background-color': '#FF4136',
+            'border-width': 3,
+            'border-color': '#85144b'
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'label': 'data(label)',
+            'width': (ele) => 1 + (ele.data('confidence') * 3),
+            'line-color': '#aaa',
+            'target-arrow-color': '#aaa',
+            'target-arrow-shape': 'triangle',
+            'curve-style': 'bezier'
+          }
+        }
+      ],
+
+      layout: {
+        name: 'cose',
+        idealEdgeLength: 100,
+        nodeRepulsion: 400000
+      }
+    });
+
+    // Click handler
+    cy.on('tap', 'edge', (evt) => {
+      const edge = evt.target;
+      const relationshipId = edge.id();
+      showRelationshipDetails(relationshipId);
+    });
+
+    cy.on('tap', 'node', (evt) => {
+      const node = evt.target;
+      const personId = node.id();
+      window.location.href = `/dossiers/${dossierId}/persons/${personId}`;
+    });
+
+  }, [graph]);
+
+  return (
+    <div className="relationship-graph">
+      <div ref={cyRef} style={{ width: '100%', height: '600px' }}></div>
+
+      <div className="graph-legend">
+        <h4>Legend</h4>
+        <p>Node size = Confidence score</p>
+        <p>Edge thickness = Relationship confidence</p>
+        <p>Click node to view person</p>
+        <p>Click edge to view evidence</p>
+      </div>
+    </div>
+  );
+}
+```
+
+**Backend:**
+```javascript
+// routes/dossiers.js
+
+router.get('/:id/relationship-graph', async (req, res) => {
+  const { id } = req.params;
+  const { focus } = req.query;
+
+  // Get all persons in dossier
+  const persons = await db.query(`
+    SELECT id, canonical_name, confidence_score
+    FROM persons
+    WHERE dossier_id = $1
+  `, [id]);
+
+  // Get relationships
+  const relationships = await db.query(`
+    SELECT *
+    FROM person_relationships
+    WHERE dossier_id = $1
+  `, [id]);
+
+  // If focus person specified, filter to 2-degree connections
+  let filteredPersons = persons;
+  let filteredRelationships = relationships;
+
+  if (focus) {
+    const connectedIds = new Set([focus]);
+
+    // 1st degree
+    relationships.forEach(rel => {
+      if (rel.person_a_id === focus) connectedIds.add(rel.person_b_id);
+      if (rel.person_b_id === focus) connectedIds.add(rel.person_a_id);
+    });
+
+    // 2nd degree (optional)
+    const firstDegree = [...connectedIds];
+    firstDegree.forEach(personId => {
+      relationships.forEach(rel => {
+        if (rel.person_a_id === personId) connectedIds.add(rel.person_b_id);
+        if (rel.person_b_id === personId) connectedIds.add(rel.person_a_id);
+      });
+    });
+
+    filteredPersons = persons.filter(p => connectedIds.has(p.id));
+    filteredRelationships = relationships.filter(r =>
+      connectedIds.has(r.person_a_id) && connectedIds.has(r.person_b_id)
+    );
+  }
+
+  res.json({
+    nodes: filteredPersons.map(p => ({
+      id: p.id,
+      name: p.canonical_name,
+      confidence_score: p.confidence_score
+    })),
+    edges: filteredRelationships.map(r => ({
+      id: r.id,
+      from: r.person_a_id,
+      to: r.person_b_id,
+      relationship_type: r.relationship_type,
+      confidence_score: r.confidence_score,
+      evidence_refs: r.evidence_refs
+    }))
+  });
+});
+```
+
+#### 7.6.4 Media Gallery with Filters
+
+```jsx
+// components/MediaGallery.jsx
+
+function MediaGallery({ dossierId }) {
+  const [media, setMedia] = useState([]);
+  const [filters, setFilters] = useState({
+    type: 'all', // all, image, video
+    tagged: 'all', // all, tagged, untagged
+    person: null,
+    dateFrom: null,
+    dateTo: null
+  });
+
+  useEffect(() => {
+    fetchMedia();
+  }, [filters]);
+
+  const fetchMedia = async () => {
+    const params = new URLSearchParams();
+    Object.keys(filters).forEach(key => {
+      if (filters[key] && filters[key] !== 'all') {
+        params.append(key, filters[key]);
+      }
+    });
+
+    const response = await fetch(`/api/dossiers/${dossierId}/media?${params}`);
+    const data = await response.json();
+    setMedia(data.media);
+  };
+
+  return (
+    <div className="media-gallery">
+      <div className="gallery-filters">
+        <select value={filters.type} onChange={(e) => setFilters({...filters, type: e.target.value})}>
+          <option value="all">All Types</option>
+          <option value="image">Images Only</option>
+          <option value="video">Videos Only</option>
+        </select>
+
+        <select value={filters.tagged} onChange={(e) => setFilters({...filters, tagged: e.target.value})}>
+          <option value="all">All</option>
+          <option value="tagged">Tagged with Person</option>
+          <option value="untagged">Untagged</option>
+        </select>
+
+        <PersonSelect
+          value={filters.person}
+          onChange={(personId) => setFilters({...filters, person: personId})}
+          placeholder="Filter by person..."
+        />
+      </div>
+
+      <div className="gallery-grid">
+        {media.map(item => (
+          <MediaItem key={item.id} media={item} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MediaItem({ media }) {
+  const [showFaces, setShowFaces] = useState(false);
+
+  return (
+    <div className="media-item">
+      <div className="media-thumbnail">
+        {media.file_type === 'image' ? (
+          <img src={`/evidence${media.file_path}`} alt={media.file_name} />
+        ) : (
+          <video src={`/evidence${media.file_path}`} controls />
+        )}
+
+        {/* Face bounding boxes overlay */}
+        {showFaces && media.detected_faces.length > 0 && (
+          <svg className="face-overlay">
+            {media.detected_faces.map(face => (
+              <rect
+                key={face.id}
+                x={face.bbox_x}
+                y={face.bbox_y}
+                width={face.bbox_width}
+                height={face.bbox_height}
+                fill="none"
+                stroke={face.annotations.length > 0 ? 'green' : 'yellow'}
+                strokeWidth="2"
+              />
+            ))}
+          </svg>
+        )}
+      </div>
+
+      <div className="media-info">
+        <p>{media.file_name}</p>
+        {media.captured_at && (
+          <small>{new Date(media.captured_at).toLocaleDateString()}</small>
+        )}
+        {media.detected_faces.length > 0 && (
+          <button onClick={() => setShowFaces(!showFaces)}>
+            {showFaces ? 'Hide' : 'Show'} {media.detected_faces.length} Faces
+          </button>
+        )}
+      </div>
+
+      {media.person_tags.length > 0 && (
+        <div className="tagged-persons">
+          Tagged: {media.person_tags.map(p => p.name).join(', ')}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+### 7.7 Technical Implementation Notes
+
+#### Database Choice: PostgreSQL vs SQLite
+
+**Empfehlung: PostgreSQL**
+
+**Argumente:**
+- ✅ Array-Datentypen (`UUID[]` für `evidence_refs`, `aliases`)
+- ✅ JSONB für flexible Metadaten
+- ✅ Full-Text Search (für Personennamen, Attribute)
+- ✅ String-Similarity-Extension (`pg_trgm` für fuzzy matching)
+- ✅ Besser bei vielen Relationships (JOINs)
+
+**SQLite würde bedeuten:**
+- ❌ Arrays als JSON speichern (langsamer, unhandlicher)
+- ❌ Kein natives Full-Text Search
+- ❌ Keine String-Similarity
+
+**Migration:**
+Existing SQLite-Datenbank für User-Management bleibt. PostgreSQL nur für Dossiers/Recherchen.
+
+#### Storage Strategy
+
+**Medien:**
+- Local Storage: `/evidence/media/{dossier_id}/{sha256}.ext`
+- Optional Nextcloud Sync: Background-Job synchronisiert zu Nextcloud (Backup)
+
+**Face Crops:**
+- Local Storage: `/evidence/faces/{media_asset_id}/face_{index}.jpg`
+- Nicht in Nextcloud (zu viele kleine Dateien)
+
+#### Worker Architecture
+
+**Separate Worker Service:**
+```yaml
+# docker-compose.yml
+
+services:
+  # ... existing services ...
+
+  worker:
+    build: ./worker
+    environment:
+      - DATABASE_URL=postgresql://...
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - evidence-storage:/evidence
+    depends_on:
+      - postgres
+      - redis
+```
+
+**Python Dependencies:**
+```python
+# worker/requirements.txt
+
+face-detection==0.2.2
+Pillow==10.0.0
+opencv-python==4.8.0
+numpy==1.24.3
+```
+
+#### Job Queue
+
+**Bull (Redis):**
+```javascript
+// Queues
+const mediaQueue = new Bull('media-jobs', redisConfig);
+const faceDetectionQueue = new Bull('face-detection', redisConfig);
+const osintQueue = new Bull('osint-jobs', redisConfig);
+
+// Concurrency
+mediaQueue.process('bulk-download', 3, bulkDownloadHandler); // 3 parallel downloads
+faceDetectionQueue.process('detect-faces', 2, faceDetectionHandler); // 2 parallel detections
+osintQueue.process('run-tool', 1, osintToolHandler); // 1 OSINT job at a time (rate limits!)
+```
+
+### 7.8 API Endpoints Summary
+
+```javascript
+// Persons
+GET    /api/dossiers/:id/persons
+POST   /api/dossiers/:id/persons
+GET    /api/persons/:id
+PATCH  /api/persons/:id
+DELETE /api/persons/:id
+POST   /api/persons/:id/merge  // Merge duplicate persons
+GET    /api/persons/:id/timeline
+
+// Person Attributes
+POST   /api/persons/:id/attributes
+PATCH  /api/attributes/:id
+DELETE /api/attributes/:id
+
+// Person Relationships
+POST   /api/dossiers/:id/relationships
+GET    /api/relationships/:id
+PATCH  /api/relationships/:id
+DELETE /api/relationships/:id
+
+// Media
+POST   /api/media/upload
+POST   /api/media/bulk-download
+GET    /api/dossiers/:id/media
+GET    /api/media/:id
+DELETE /api/media/:id
+
+// Face Detection
+POST   /api/media/:id/detect-faces  // Trigger detection job
+GET    /api/dossiers/:id/faces  // Get all detected faces
+PATCH  /api/faces/:id  // Mark as reviewed
+
+// Face Annotations
+POST   /api/faces/annotate  // Tag face to person
+DELETE /api/annotations/:id
+
+// OSINT Findings
+GET    /api/dossiers/:id/osint-findings
+POST   /api/osint-findings/:id/accept  // Accept finding → create attribute
+POST   /api/osint-findings/:id/reject
+POST   /api/osint-findings/:id/merge   // Merge to existing person
+
+// Visualizations
+GET    /api/dossiers/:id/relationship-graph
+GET    /api/dossiers/:id/stats
+```
+
+---
+
+## 8. Technische Umsetzung (Module)
 
 ### 7.1 Quellenmanagement
 

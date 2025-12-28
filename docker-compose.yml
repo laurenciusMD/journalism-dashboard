@@ -34,11 +34,20 @@ services:
       - WEBDAV_URL=${WEBDAV_URL}
       - WEBDAV_USERNAME=${WEBDAV_USERNAME}
       - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
+      # PostgreSQL (for dossiers/investigations)
+      - POSTGRES_URL=postgresql://journalism:${JOURNALISM_DB_PASSWORD:-journalism_password}@postgres:5432/journalism
+      # Redis (for job queues)
+      - REDIS_URL=redis://redis:6379
     volumes:
       - dashboard-data:/app/data
+      - evidence-storage:/app/evidence
     depends_on:
       nextcloud:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - journalism-network
     healthcheck:
@@ -102,6 +111,43 @@ services:
       retries: 5
       start_period: 30s
 
+  # ===== PostgreSQL (Journalism Database) =====
+  postgres:
+    image: postgres:15-alpine
+    container_name: journalism-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=journalism
+      - POSTGRES_USER=journalism
+      - POSTGRES_PASSWORD=${JOURNALISM_DB_PASSWORD:-journalism_password}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - journalism-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U journalism"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ===== Redis (Job Queue) =====
+  redis:
+    image: redis:7-alpine
+    container_name: journalism-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - journalism-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
 networks:
   journalism-network:
     driver: bridge
@@ -117,6 +163,18 @@ volumes:
   nextcloud-db:
     driver: local
 
-  # Dashboard data volume (SQLite database)
+  # Dashboard data volume (SQLite database for users)
   dashboard-data:
+    driver: local
+
+  # PostgreSQL data volume (investigations/dossiers)
+  postgres-data:
+    driver: local
+
+  # Redis data volume (job queues)
+  redis-data:
+    driver: local
+
+  # Evidence storage (media, documents)
+  evidence-storage:
     driver: local

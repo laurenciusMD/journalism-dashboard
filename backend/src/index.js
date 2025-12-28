@@ -7,6 +7,11 @@ import { fileURLToPath } from 'url';
 import { requireAuth, validateCredentials, validateNextcloudAuth } from './middleware/auth.js';
 import userService from './services/userService.js';
 import nextcloudProvisioning from './services/nextcloudProvisioningService.js';
+import postgresService from './services/postgresService.js';
+
+// Import routes
+import dossiersRouter from './routes/dossiers.js';
+import personsRouter from './routes/persons.js';
 
 // ES module workaround for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -205,6 +210,10 @@ app.get('/api/health', (req, res) => {
 
 // ===== Protected API Routes (require authentication) =====
 
+// Investigation Routes
+app.use('/api/dossiers', dossiersRouter);
+app.use('/api/persons', personsRouter);
+
 // AI Routes - Claude
 app.post('/api/ai/claude/generate', requireAuth, async (req, res) => {
   try {
@@ -351,15 +360,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`
+// Initialize PostgreSQL and start server
+async function startServer() {
+  try {
+    // Initialize PostgreSQL connection
+    await postgresService.initialize();
+
+    app.listen(PORT, () => {
+      console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║   📰 Journalism Dashboard                            ║
 ║                                                       ║
 ║   🚀 Server running on http://localhost:${PORT}       ║
 ║   📱 Dashboard UI: http://localhost:${PORT}           ║
 ║   🔌 API: http://localhost:${PORT}/api               ║
+║                                                       ║
+║   Databases:                                         ║
+║   ✓ SQLite (User Management)                         ║
+║   ✓ PostgreSQL (Investigations)                      ║
 ║                                                       ║
 ║   AI Integration ready:                              ║
 ║   ✓ Claude AI                                        ║
@@ -370,7 +388,27 @@ app.listen(PORT, () => {
 ║   ✓ Google Drive                                     ║
 ║   ✓ Private Cloud (WebDAV)                           ║
 ╚═══════════════════════════════════════════════════════╝
-  `);
+      `);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Handle graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, closing PostgreSQL connections...');
+  await postgresService.close();
+  process.exit(0);
 });
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, closing PostgreSQL connections...');
+  await postgresService.close();
+  process.exit(0);
+});
+
+startServer();
 
 export default app;
