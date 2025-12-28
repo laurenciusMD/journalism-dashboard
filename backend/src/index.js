@@ -5,6 +5,8 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { requireAuth, validateCredentials, validateNextcloudAuth } from './middleware/auth.js';
+import userService from './services/userService.js';
+import nextcloudProvisioning from './services/nextcloudProvisioningService.js';
 
 // ES module workaround for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +44,79 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // ===== Authentication Routes =====
 
+// Check if registration is needed
+app.get('/api/auth/needs-setup', (req, res) => {
+  const hasUsers = userService.hasAnyUser();
+  res.json({
+    needsSetup: !hasUsers,
+    userCount: userService.getUserCount()
+  });
+});
+
+// Register new user (only allowed if no users exist)
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+
+    // Check if registration is allowed
+    if (userService.hasAnyUser()) {
+      return res.status(403).json({
+        error: 'Registration is disabled',
+        message: 'A user already exists. Only one user is allowed.'
+      });
+    }
+
+    if (!username || !password) {
+      return res.status(400).json({
+        error: 'Username and password required'
+      });
+    }
+
+    // Create user in database
+    const user = await userService.createUser(username, password, email);
+
+    // Try to create user in Nextcloud (non-blocking)
+    try {
+      const nextcloudCreated = await nextcloudProvisioning.createUser(
+        username,
+        password,
+        username,
+        email
+      );
+
+      if (nextcloudCreated) {
+        console.log(`✓ User ${username} created in both Dashboard and Nextcloud`);
+      } else {
+        console.warn(`⚠ User ${username} created in Dashboard, but Nextcloud creation failed`);
+      }
+    } catch (ncError) {
+      console.warn('Nextcloud user creation failed:', ncError.message);
+      // Continue anyway - Dashboard works without Nextcloud
+    }
+
+    // Auto-login after registration
+    req.session.authenticated = true;
+    req.session.username = user.username;
+    req.session.userId = user.id;
+
+    res.json({
+      success: true,
+      message: 'Registration successful',
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(400).json({
+      error: 'Registration failed',
+      message: error.message
+    });
+  }
+});
+
 // Login endpoint
 app.post('/api/auth/login', async (req, res) => {
   try {
@@ -53,26 +128,36 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    let isValid = false;
+    let user = null;
 
-    // Option 1: Validate against Nextcloud (if enabled)
-    if (useNextcloud && process.env.NEXTCLOUD_URL) {
-      isValid = await validateNextcloudAuth(username, password, process.env.NEXTCLOUD_URL);
+    // Option 1: Validate against Nextcloud SSO (if enabled)
+    if (useNextcloud) {
+      const nextcloudValid = await validateNextcloudAuth(username, password);
+      if (nextcloudValid) {
+        // Check if user exists in our database
+        user = await validateCredentials(username, password);
+        if (!user) {
+          // User exists in Nextcloud but not in our DB - this shouldn't happen
+          // in normal flow, but we'll create a fallback
+          console.warn(`User ${username} authenticated via Nextcloud but not found in Dashboard DB`);
+        }
+      }
     }
 
-    // Option 2: Validate against environment variables
-    if (!isValid) {
-      isValid = validateCredentials(username, password);
+    // Option 2: Validate against database
+    if (!user) {
+      user = await validateCredentials(username, password);
     }
 
-    if (isValid) {
+    if (user) {
       req.session.authenticated = true;
-      req.session.username = username;
+      req.session.username = user.username || username;
+      req.session.userId = user.id;
 
       res.json({
         success: true,
         message: 'Login successful',
-        username
+        username: user.username || username
       });
     } else {
       res.status(401).json({

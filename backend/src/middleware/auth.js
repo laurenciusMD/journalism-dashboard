@@ -2,8 +2,11 @@
  * Authentication Middleware
  *
  * Provides session-based authentication for the dashboard.
- * Uses credentials from environment variables or Nextcloud authentication.
+ * Uses database for user management with Nextcloud SSO integration.
  */
+
+import userService from '../services/userService.js';
+import nextcloudProvisioning from '../services/nextcloudProvisioningService.js';
 
 /**
  * Check if user is authenticated
@@ -20,44 +23,30 @@ export const requireAuth = (req, res, next) => {
 };
 
 /**
- * Validate credentials against environment variables
+ * Validate credentials against database
+ * @param {string} username
+ * @param {string} password
+ * @returns {Promise<object|null>} User object or null
  */
-export const validateCredentials = (username, password) => {
-  const validUsername = process.env.DASHBOARD_USERNAME || process.env.NEXTCLOUD_USERNAME;
-  const validPassword = process.env.DASHBOARD_PASSWORD || process.env.NEXTCLOUD_PASSWORD;
-
-  if (!validUsername || !validPassword) {
-    console.error('WARNING: No credentials configured in environment variables!');
-    return false;
+export const validateCredentials = async (username, password) => {
+  try {
+    const user = await userService.verifyCredentials(username, password);
+    return user;
+  } catch (error) {
+    console.error('Credential validation error:', error.message);
+    return null;
   }
-
-  return username === validUsername && password === validPassword;
 };
 
 /**
- * Optional: Validate against Nextcloud
- * This would authenticate against Nextcloud's API
+ * Validate against Nextcloud SSO
+ * @param {string} username
+ * @param {string} password
+ * @returns {Promise<boolean>}
  */
-export const validateNextcloudAuth = async (username, password, nextcloudUrl) => {
-  if (!nextcloudUrl) {
-    return false;
-  }
-
+export const validateNextcloudAuth = async (username, password) => {
   try {
-    const axios = require('axios');
-
-    // Try to access Nextcloud user endpoint
-    const response = await axios.get(`${nextcloudUrl}/ocs/v1.php/cloud/user`, {
-      auth: {
-        username,
-        password
-      },
-      headers: {
-        'OCS-APIRequest': 'true'
-      }
-    });
-
-    return response.status === 200;
+    return await nextcloudProvisioning.verifyCredentials(username, password);
   } catch (error) {
     console.error('Nextcloud auth failed:', error.message);
     return false;
