@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # ===== Journalism Dashboard =====
   journalism-dashboard:
     build:
       context: .
@@ -17,10 +18,10 @@ services:
       - DASHBOARD_USERNAME=${DASHBOARD_USERNAME}
       - DASHBOARD_PASSWORD=${DASHBOARD_PASSWORD}
       - SESSION_SECRET=${SESSION_SECRET}
-      # Nextcloud (Optional - for SSO and file access)
-      - NEXTCLOUD_URL=${NEXTCLOUD_URL}
-      - NEXTCLOUD_USERNAME=${NEXTCLOUD_USERNAME}
-      - NEXTCLOUD_PASSWORD=${NEXTCLOUD_PASSWORD}
+      # Nextcloud (Internal - automatic configuration)
+      - NEXTCLOUD_URL=http://nextcloud
+      - NEXTCLOUD_USERNAME=${DASHBOARD_USERNAME}
+      - NEXTCLOUD_PASSWORD=${DASHBOARD_PASSWORD}
       # AI Services
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_GEMINI_API_KEY=${GOOGLE_GEMINI_API_KEY}
@@ -33,15 +34,87 @@ services:
       - WEBDAV_URL=${WEBDAV_URL}
       - WEBDAV_USERNAME=${WEBDAV_USERNAME}
       - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
+    depends_on:
+      nextcloud:
+        condition: service_healthy
+    networks:
+      - journalism-network
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 10s
-    # Optional: Add volumes for persistent data
-    # volumes:
-    #   - journalism-data:/app/data
 
-# volumes:
-#   journalism-data:
+  # ===== Nextcloud =====
+  nextcloud:
+    image: nextcloud:latest
+    container_name: nextcloud
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      - MYSQL_HOST=nextcloud-db
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD:-nextcloud_secure_password}
+      - NEXTCLOUD_ADMIN_USER=${DASHBOARD_USERNAME}
+      - NEXTCLOUD_ADMIN_PASSWORD=${DASHBOARD_PASSWORD}
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost nextcloud
+      - OVERWRITEPROTOCOL=http
+    volumes:
+      - nextcloud-data:/var/www/html
+      - nextcloud-apps:/var/www/html/custom_apps
+      - nextcloud-config:/var/www/html/config
+    depends_on:
+      nextcloud-db:
+        condition: service_healthy
+    networks:
+      - journalism-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/status.php"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ===== Nextcloud Database (MariaDB) =====
+  nextcloud-db:
+    image: mariadb:10.11
+    container_name: nextcloud-db
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    environment:
+      - MYSQL_ROOT_PASSWORD=${NEXTCLOUD_DB_ROOT_PASSWORD:-secure_root_password}
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD:-nextcloud_secure_password}
+    volumes:
+      - nextcloud-db:/var/lib/mysql
+    networks:
+      - journalism-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+networks:
+  journalism-network:
+    driver: bridge
+
+volumes:
+  # Nextcloud volumes
+  nextcloud-data:
+    driver: local
+  nextcloud-apps:
+    driver: local
+  nextcloud-config:
+    driver: local
+  nextcloud-db:
+    driver: local
+
+  # Optional: Dashboard data volume
+  # journalism-data:
+  #   driver: local
