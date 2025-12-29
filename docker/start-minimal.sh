@@ -66,10 +66,7 @@ NEXTCLOUD_DATA="/var/www/nextcloud/data"
 NEXTCLOUD_ADMIN="${NEXTCLOUD_ADMIN_USER:-admin}"
 NEXTCLOUD_ADMIN_PASSWORD="${NEXTCLOUD_ADMIN_PASSWORD:-admin123}"
 
-# Configure Apache to listen on port 8080 (only if not already configured)
-if ! grep -q "^Listen 8080$" /etc/apache2/ports.conf; then
-    sed -i 's/^Listen 80$/Listen 8080/' /etc/apache2/ports.conf 2>/dev/null || true
-fi
+# Note: Apache port 8080 is already configured in the Dockerfile
 
 # Start PostgreSQL for Nextcloud installation if not running
 echo "🚀 Starting PostgreSQL for Nextcloud setup..."
