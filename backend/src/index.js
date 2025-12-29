@@ -4,8 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { requireAuth, validateCredentials, validateNextcloudAuth } from './middleware/auth.js';
-import userService from './services/userService.js';
+import { requireAuth } from './middleware/auth.js';
 import nextcloudProvisioning from './services/nextcloudProvisioningService.js';
 import postgresService from './services/postgresService.js';
 
@@ -29,9 +28,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    secure: false, // Allow HTTP cookies (for local network access)
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // Allow cookies in same-site requests
   }
 }));
 
@@ -49,27 +49,27 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // ===== Authentication Routes =====
 
-// Check if registration is needed
-app.get('/api/auth/needs-setup', (req, res) => {
-  const hasUsers = userService.hasAnyUser();
-  res.json({
-    needsSetup: !hasUsers,
-    userCount: userService.getUserCount()
-  });
+// Check if registration is needed (always show login - users managed in Nextcloud)
+app.get('/api/auth/needs-setup', async (req, res) => {
+  try {
+    // Check if Nextcloud is available
+    const isAvailable = await nextcloudProvisioning.isAvailable();
+    res.json({
+      needsSetup: false, // Always use Nextcloud login
+      nextcloudAvailable: isAvailable
+    });
+  } catch (error) {
+    res.json({
+      needsSetup: false,
+      nextcloudAvailable: false
+    });
+  }
 });
 
-// Register new user (only allowed if no users exist)
+// Register new user in Nextcloud
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { username, password, email } = req.body;
-
-    // Check if registration is allowed
-    if (userService.hasAnyUser()) {
-      return res.status(403).json({
-        error: 'Registration is disabled',
-        message: 'A user already exists. Only one user is allowed.'
-      });
-    }
 
     if (!username || !password) {
       return res.status(400).json({
@@ -77,40 +77,42 @@ app.post('/api/auth/register', async (req, res) => {
       });
     }
 
-    // Create user in database
-    const user = await userService.createUser(username, password, email);
-
-    // Try to create user in Nextcloud (non-blocking)
-    try {
-      const nextcloudCreated = await nextcloudProvisioning.createUser(
-        username,
-        password,
-        username,
-        email
-      );
-
-      if (nextcloudCreated) {
-        console.log(`✓ User ${username} created in both Dashboard and Nextcloud`);
-      } else {
-        console.warn(`⚠ User ${username} created in Dashboard, but Nextcloud creation failed`);
-      }
-    } catch (ncError) {
-      console.warn('Nextcloud user creation failed:', ncError.message);
-      // Continue anyway - Dashboard works without Nextcloud
+    // Check if Nextcloud is available
+    const isAvailable = await nextcloudProvisioning.isAvailable();
+    if (!isAvailable) {
+      return res.status(503).json({
+        error: 'Nextcloud not available',
+        message: 'Please wait for Nextcloud to start or contact administrator'
+      });
     }
+
+    // Create user directly in Nextcloud
+    const created = await nextcloudProvisioning.createUser(
+      username,
+      password,
+      username,
+      email
+    );
+
+    if (!created) {
+      return res.status(400).json({
+        error: 'Registration failed',
+        message: 'User could not be created in Nextcloud. User might already exist.'
+      });
+    }
+
+    console.log(`✓ User ${username} created in Nextcloud`);
 
     // Auto-login after registration
     req.session.authenticated = true;
-    req.session.username = user.username;
-    req.session.userId = user.id;
+    req.session.username = username;
 
     res.json({
       success: true,
       message: 'Registration successful',
       user: {
-        id: user.id,
-        username: user.username,
-        email: user.email
+        username: username,
+        email: email
       }
     });
   } catch (error) {
@@ -122,10 +124,10 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Login endpoint
+// Login endpoint - authenticate via Nextcloud
 app.post('/api/auth/login', async (req, res) => {
   try {
-    const { username, password, useNextcloud } = req.body;
+    const { username, password } = req.body;
 
     if (!username || !password) {
       return res.status(400).json({
@@ -133,45 +135,32 @@ app.post('/api/auth/login', async (req, res) => {
       });
     }
 
-    let user = null;
+    // Validate credentials against Nextcloud
+    const isValid = await nextcloudProvisioning.verifyCredentials(username, password);
 
-    // Option 1: Validate against Nextcloud SSO (if enabled)
-    if (useNextcloud) {
-      const nextcloudValid = await validateNextcloudAuth(username, password);
-      if (nextcloudValid) {
-        // Check if user exists in our database
-        user = await validateCredentials(username, password);
-        if (!user) {
-          // User exists in Nextcloud but not in our DB - this shouldn't happen
-          // in normal flow, but we'll create a fallback
-          console.warn(`User ${username} authenticated via Nextcloud but not found in Dashboard DB`);
-        }
-      }
-    }
-
-    // Option 2: Validate against database
-    if (!user) {
-      user = await validateCredentials(username, password);
-    }
-
-    if (user) {
+    if (isValid) {
       req.session.authenticated = true;
-      req.session.username = user.username || username;
-      req.session.userId = user.id;
+      req.session.username = username;
+
+      console.log(`✓ User ${username} logged in via Nextcloud`);
 
       res.json({
         success: true,
         message: 'Login successful',
-        username: user.username || username
+        username: username
       });
     } else {
       res.status(401).json({
-        error: 'Invalid credentials'
+        error: 'Invalid credentials',
+        message: 'Please check your Nextcloud username and password'
       });
     }
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({
+      error: 'Login failed',
+      message: error.message
+    });
   }
 });
 
