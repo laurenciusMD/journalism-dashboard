@@ -76,26 +76,26 @@ if [ ! -f "/var/www/nextcloud/config/config.php" ]; then
     echo "🔧 Installing Nextcloud with PostgreSQL..."
 
     cd /var/www/nextcloud
-    sudo -u www-data php occ maintenance:install \
-        --database="pgsql" \
-        --database-host="localhost" \
-        --database-name="$NEXTCLOUD_DB" \
-        --database-user="$NEXTCLOUD_DB_USER" \
-        --database-pass="$NEXTCLOUD_DB_PASSWORD" \
-        --admin-user="$NEXTCLOUD_ADMIN" \
-        --admin-pass="$NEXTCLOUD_ADMIN_PASSWORD" \
-        --data-dir="$NEXTCLOUD_DATA"
+    su -s /bin/bash www-data -c "php occ maintenance:install \
+        --database=\"pgsql\" \
+        --database-host=\"localhost\" \
+        --database-name=\"$NEXTCLOUD_DB\" \
+        --database-user=\"$NEXTCLOUD_DB_USER\" \
+        --database-pass=\"$NEXTCLOUD_DB_PASSWORD\" \
+        --admin-user=\"$NEXTCLOUD_ADMIN\" \
+        --admin-pass=\"$NEXTCLOUD_ADMIN_PASSWORD\" \
+        --data-dir=\"$NEXTCLOUD_DATA\""
 
     # Configure trusted domains
-    sudo -u www-data php occ config:system:set trusted_domains 0 --value="localhost"
-    sudo -u www-data php occ config:system:set trusted_domains 1 --value="127.0.0.1"
-    sudo -u www-data php occ config:system:set trusted_domains 2 --value="*"
+    su -s /bin/bash www-data -c "php occ config:system:set trusted_domains 0 --value=\"localhost\""
+    su -s /bin/bash www-data -c "php occ config:system:set trusted_domains 1 --value=\"127.0.0.1\""
+    su -s /bin/bash www-data -c "php occ config:system:set trusted_domains 2 --value=\"*\""
 
     # Set overwrite protocol
-    sudo -u www-data php occ config:system:set overwriteprotocol --value="http"
+    su -s /bin/bash www-data -c "php occ config:system:set overwriteprotocol --value=\"http\""
 
     # Configure cron
-    sudo -u www-data php occ background:cron
+    su -s /bin/bash www-data -c "php occ background:cron"
 
     echo "✅ Nextcloud installation complete!"
     echo "   Admin user: $NEXTCLOUD_ADMIN"
