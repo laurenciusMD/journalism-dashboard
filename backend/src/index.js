@@ -12,6 +12,7 @@ import postgresService from './services/postgresService.js';
 // Import routes
 import dossiersRouter from './routes/dossiers.js';
 import personsRouter from './routes/persons.js';
+import uploadRouter from './routes/upload.js';
 
 // ES module workaround for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -29,9 +30,10 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    secure: false, // Allow HTTP cookies (for local network access)
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax' // Allow cookies in same-site requests
   }
 }));
 
@@ -213,6 +215,7 @@ app.get('/api/health', (req, res) => {
 // Investigation Routes
 app.use('/api/dossiers', dossiersRouter);
 app.use('/api/persons', personsRouter);
+app.use('/api/upload', uploadRouter);
 
 // AI Routes - Claude
 app.post('/api/ai/claude/generate', requireAuth, async (req, res) => {
