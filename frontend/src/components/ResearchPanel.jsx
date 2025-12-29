@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import '../styles/Research.css'
+import FileUpload from './FileUpload.jsx'
 
 function ResearchPanel() {
   const [activeView, setActiveView] = useState('dossiers') // dossiers, person-detail
@@ -206,6 +207,12 @@ function ResearchPanel() {
           🔗 Beziehungen ({relationships.length})
         </button>
         <button
+          className={activeView === 'files' ? 'tab-btn active' : 'tab-btn'}
+          onClick={() => setActiveView('files')}
+        >
+          📎 Dateien
+        </button>
+        <button
           className={activeView === 'graph' ? 'tab-btn active' : 'tab-btn'}
           onClick={() => setActiveView('graph')}
         >
@@ -229,6 +236,13 @@ function ResearchPanel() {
             persons={persons}
             dossierId={selectedDossier.id}
             onRefresh={() => loadDossierDetails(selectedDossier.id)}
+          />
+        )}
+
+        {activeView === 'files' && (
+          <FileUpload
+            dossierId={selectedDossier.id}
+            onUploadSuccess={() => {}}
           />
         )}
 

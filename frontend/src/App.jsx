@@ -485,6 +485,26 @@ function GPTsPanel({ sharedContent, setSharedContent, setActiveTab }) {
     setActiveTab(tab)
   }
 
+  const handleDirectSend = async (gptKey) => {
+    if (!inputText.trim()) {
+      alert('Bitte geben Sie zuerst einen Text ein')
+      return
+    }
+
+    try {
+      // Copy text to clipboard
+      await navigator.clipboard.writeText(inputText)
+
+      // Open GPT in new tab
+      window.open(gpts[gptKey].url, '_blank')
+
+      alert('✅ Text in Zwischenablage kopiert!\n\nFügen Sie ihn im GPT-Chat ein (Strg+V oder Cmd+V)')
+    } catch (err) {
+      console.error('Failed to copy:', err)
+      alert('❌ Fehler beim Kopieren. Bitte manuell kopieren.')
+    }
+  }
+
   return (
     <div className="panel">
       <h2>🤖 MDR GPTs</h2>
@@ -501,9 +521,21 @@ function GPTsPanel({ sharedContent, setSharedContent, setActiveTab }) {
             >
               <h4>{gpt.name}</h4>
               <p>{gpt.description}</p>
-              <a href={gpt.url} target="_blank" rel="noopener noreferrer" className="gpt-link">
-                🔗 In ChatGPT öffnen
-              </a>
+              <div className="gpt-card-actions">
+                <a href={gpt.url} target="_blank" rel="noopener noreferrer" className="gpt-link">
+                  🔗 Öffnen
+                </a>
+                <button
+                  className="gpt-send-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDirectSend(key)
+                  }}
+                  disabled={!inputText.trim()}
+                >
+                  📤 Text senden
+                </button>
+              </div>
             </div>
           ))}
         </div>
