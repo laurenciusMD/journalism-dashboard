@@ -102,6 +102,9 @@ RUN a2enmod rewrite headers env dir mime setenvif ssl \
 COPY docker/nextcloud.conf /etc/apache2/sites-available/nextcloud.conf
 RUN a2ensite nextcloud
 
+# Configure Apache to listen on port 8080 (permanent fix)
+RUN sed -i 's/^Listen 80$/Listen 8080/' /etc/apache2/ports.conf
+
 # Copy supervisord configuration
 COPY docker/supervisord-minimal.conf /etc/supervisor/conf.d/supervisord.conf
 

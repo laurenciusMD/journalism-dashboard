@@ -41,6 +41,12 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
     if [ -f "/app/migrations/001_initial_schema.sql" ]; then
         echo "📋 Running journalism database migrations..."
         su - postgres -c "psql -d $POSTGRES_DB -f /app/migrations/001_initial_schema.sql"
+
+        echo "🔐 Granting permissions to journalism user..."
+        su - postgres -c "psql -d $POSTGRES_DB -c 'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $POSTGRES_USER;'"
+        su - postgres -c "psql -d $POSTGRES_DB -c 'GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $POSTGRES_USER;'"
+        su - postgres -c "psql -d $POSTGRES_DB -c 'ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $POSTGRES_USER;'"
+        su - postgres -c "psql -d $POSTGRES_DB -c 'ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $POSTGRES_USER;'"
     fi
 
     echo "👤 Creating Nextcloud database and user..."
@@ -60,8 +66,7 @@ NEXTCLOUD_DATA="/var/www/nextcloud/data"
 NEXTCLOUD_ADMIN="${NEXTCLOUD_ADMIN_USER:-admin}"
 NEXTCLOUD_ADMIN_PASSWORD="${NEXTCLOUD_ADMIN_PASSWORD:-admin123}"
 
-# Configure Apache to listen on port 8080
-sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf 2>/dev/null || true
+# Note: Apache port 8080 is already configured in the Dockerfile
 
 # Start PostgreSQL for Nextcloud installation if not running
 echo "🚀 Starting PostgreSQL for Nextcloud setup..."
