@@ -18,10 +18,10 @@ Diese Anleitung zeigt, wie du das aktualisierte Docker Image mit dem Apache-Port
 cd /pfad/zu/journalism-dashboard
 
 # Image bauen
-docker build -t laurenciusmd/journalism-dashboard:latest .
+docker build -t laurencius/journalism-dashboard:latest .
 
 # Image zu Docker Hub pushen
-docker push laurenciusmd/journalism-dashboard:latest
+docker push laurencius/journalism-dashboard:latest
 ```
 
 **Hinweis:** Der Build dauert ca. 5-10 Minuten (Nextcloud Download + Dependencies)
@@ -46,7 +46,7 @@ docker push laurenciusmd/journalism-dashboard:latest
 3. **Image neu pullen:**
    - Öffne Terminal/SSH auf deinem CasaOS-Server
    ```bash
-   docker pull laurenciusmd/journalism-dashboard:latest
+   docker pull laurencius/journalism-dashboard:latest
    ```
 
 4. **Container neu erstellen:**
@@ -59,7 +59,7 @@ version: '3.8'
 
 services:
   journalism-dashboard:
-    image: laurenciusmd/journalism-dashboard:latest
+    image: laurencius/journalism-dashboard:latest
     container_name: journalism-dashboard
     ports:
       - "3001:3001"    # Frontend
@@ -107,7 +107,7 @@ docker stop journalism-dashboard
 docker rm journalism-dashboard
 
 # 2. Neues Image pullen
-docker pull laurenciusmd/journalism-dashboard:latest
+docker pull laurencius/journalism-dashboard:latest
 
 # 3. Container neu starten mit gleichen Volumes
 docker run -d \
@@ -129,7 +129,7 @@ docker run -d \
   -e SESSION_SECRET=change-this-secret-key \
   -e NEXTCLOUD_TRUSTED_DOMAINS=localhost \
   --restart unless-stopped \
-  laurenciusmd/journalism-dashboard:latest
+  laurencius/journalism-dashboard:latest
 ```
 
 ---
