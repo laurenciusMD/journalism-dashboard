@@ -7,6 +7,10 @@ echo "=========================================="
 
 # ===== PostgreSQL Setup =====
 PGDATA="/var/lib/postgresql/data"
+
+# Ensure PostgreSQL directories have correct permissions
+chown -R postgres:postgres /var/lib/postgresql /var/run/postgresql 2>/dev/null || true
+chmod 2777 /var/run/postgresql 2>/dev/null || true
 POSTGRES_USER="journalism"
 POSTGRES_DB="journalism"
 POSTGRES_PASSWORD="${JOURNALISM_DB_PASSWORD:-journalism}"
@@ -43,8 +47,9 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
     su - postgres -c "psql -c \"CREATE USER $NEXTCLOUD_DB_USER WITH PASSWORD '$NEXTCLOUD_DB_PASSWORD';\""
     su - postgres -c "psql -c \"CREATE DATABASE $NEXTCLOUD_DB OWNER $NEXTCLOUD_DB_USER;\""
 
-    su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA stop"
-    sleep 2
+    echo "⏸️  Stopping temporary PostgreSQL after initialization..."
+    su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA stop" || true
+    sleep 3
     echo "✅ PostgreSQL initialization complete!"
 else
     echo "✅ PostgreSQL already initialized"
@@ -56,37 +61,41 @@ NEXTCLOUD_ADMIN="${NEXTCLOUD_ADMIN_USER:-admin}"
 NEXTCLOUD_ADMIN_PASSWORD="${NEXTCLOUD_ADMIN_PASSWORD:-admin123}"
 
 # Configure Apache to listen on port 8080
-sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf
+sed -i 's/Listen 80/Listen 8080/' /etc/apache2/ports.conf 2>/dev/null || true
 
-# Start PostgreSQL for Nextcloud installation
+# Start PostgreSQL for Nextcloud installation if not running
 echo "🚀 Starting PostgreSQL for Nextcloud setup..."
-su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA -l /tmp/postgres-nextcloud.log start"
-sleep 5
+if ! su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA status" > /dev/null 2>&1; then
+    su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA -l /tmp/postgres-nextcloud.log start"
+    sleep 5
+else
+    echo "✅ PostgreSQL already running"
+fi
 
 if [ ! -f "/var/www/nextcloud/config/config.php" ]; then
     echo "🔧 Installing Nextcloud with PostgreSQL..."
 
     cd /var/www/nextcloud
-    sudo -u www-data php occ maintenance:install \
-        --database="pgsql" \
-        --database-host="localhost" \
-        --database-name="$NEXTCLOUD_DB" \
-        --database-user="$NEXTCLOUD_DB_USER" \
-        --database-pass="$NEXTCLOUD_DB_PASSWORD" \
-        --admin-user="$NEXTCLOUD_ADMIN" \
-        --admin-pass="$NEXTCLOUD_ADMIN_PASSWORD" \
-        --data-dir="$NEXTCLOUD_DATA"
+    su -s /bin/bash www-data -c "php occ maintenance:install \
+        --database=\"pgsql\" \
+        --database-host=\"localhost\" \
+        --database-name=\"$NEXTCLOUD_DB\" \
+        --database-user=\"$NEXTCLOUD_DB_USER\" \
+        --database-pass=\"$NEXTCLOUD_DB_PASSWORD\" \
+        --admin-user=\"$NEXTCLOUD_ADMIN\" \
+        --admin-pass=\"$NEXTCLOUD_ADMIN_PASSWORD\" \
+        --data-dir=\"$NEXTCLOUD_DATA\""
 
     # Configure trusted domains
-    sudo -u www-data php occ config:system:set trusted_domains 0 --value="localhost"
-    sudo -u www-data php occ config:system:set trusted_domains 1 --value="127.0.0.1"
-    sudo -u www-data php occ config:system:set trusted_domains 2 --value="*"
+    su -s /bin/bash www-data -c "php occ config:system:set trusted_domains 0 --value=\"localhost\""
+    su -s /bin/bash www-data -c "php occ config:system:set trusted_domains 1 --value=\"127.0.0.1\""
+    su -s /bin/bash www-data -c "php occ config:system:set trusted_domains 2 --value=\"*\""
 
     # Set overwrite protocol
-    sudo -u www-data php occ config:system:set overwriteprotocol --value="http"
+    su -s /bin/bash www-data -c "php occ config:system:set overwriteprotocol --value=\"http\""
 
     # Configure cron
-    sudo -u www-data php occ background:cron
+    su -s /bin/bash www-data -c "php occ background:cron"
 
     echo "✅ Nextcloud installation complete!"
     echo "   Admin user: $NEXTCLOUD_ADMIN"
@@ -97,8 +106,9 @@ else
 fi
 
 # Stop temporary PostgreSQL (supervisord will restart it)
-su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA stop"
-sleep 2
+echo "⏸️  Stopping temporary PostgreSQL..."
+su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA stop" || true
+sleep 3
 
 # Set environment variables
 export NODE_ENV=production

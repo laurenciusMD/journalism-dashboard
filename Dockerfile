@@ -116,8 +116,8 @@ RUN chown -R postgres:postgres /var/lib/postgresql /var/run/postgresql && \
 # Expose ports
 EXPOSE 3001 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
+# Health check - longer start period for initial DB setup and Nextcloud installation
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
   CMD curl -f http://localhost:3001/api/health && curl -f http://localhost:8080/status.php || exit 1
 
 # Use startup script
