@@ -16,7 +16,7 @@ COPY frontend/ ./
 # Build frontend
 RUN npm run build
 
-# Stage 2: Production with PostgreSQL + Redis + Nextcloud
+# Stage 2: Production with PostgreSQL + Nextcloud (no MariaDB needed!)
 FROM debian:bookworm-slim
 
 # Install system dependencies
@@ -24,21 +24,18 @@ RUN apt-get update && apt-get install -y \
     # Node.js
     curl \
     gnupg \
-    # PostgreSQL
+    # PostgreSQL (for both Nextcloud + Journalism DB)
     postgresql-15 \
     postgresql-contrib-15 \
     # Redis
     redis-server \
-    # MariaDB for Nextcloud
-    mariadb-server \
-    mariadb-client \
     # Apache & PHP for Nextcloud
     apache2 \
     libapache2-mod-php8.2 \
     php8.2 \
     php8.2-fpm \
     php8.2-gd \
-    php8.2-mysql \
+    php8.2-pgsql \
     php8.2-curl \
     php8.2-mbstring \
     php8.2-intl \
@@ -106,11 +103,11 @@ COPY docker/nextcloud.conf /etc/apache2/sites-available/nextcloud.conf
 RUN a2ensite nextcloud
 
 # Copy supervisord configuration
-COPY docker/supervisord-all.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/supervisord-minimal.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Copy startup script
-COPY docker/start-all.sh /app/start-all.sh
-RUN chmod +x /app/start-all.sh
+COPY docker/start-minimal.sh /app/start-minimal.sh
+RUN chmod +x /app/start-minimal.sh
 
 # Set up PostgreSQL user and permissions
 RUN chown -R postgres:postgres /var/lib/postgresql /var/run/postgresql && \
@@ -124,4 +121,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:3001/api/health && curl -f http://localhost:8080/status.php || exit 1
 
 # Use startup script
-ENTRYPOINT ["/app/start-all.sh"]
+ENTRYPOINT ["/app/start-minimal.sh"]
