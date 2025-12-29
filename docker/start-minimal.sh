@@ -41,6 +41,12 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
     if [ -f "/app/migrations/001_initial_schema.sql" ]; then
         echo "📋 Running journalism database migrations..."
         su - postgres -c "psql -d $POSTGRES_DB -f /app/migrations/001_initial_schema.sql"
+
+        echo "🔐 Granting permissions to journalism user..."
+        su - postgres -c "psql -d $POSTGRES_DB -c 'GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $POSTGRES_USER;'"
+        su - postgres -c "psql -d $POSTGRES_DB -c 'GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $POSTGRES_USER;'"
+        su - postgres -c "psql -d $POSTGRES_DB -c 'ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $POSTGRES_USER;'"
+        su - postgres -c "psql -d $POSTGRES_DB -c 'ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $POSTGRES_USER;'"
     fi
 
     echo "👤 Creating Nextcloud database and user..."
