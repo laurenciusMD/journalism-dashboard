@@ -1,5 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" fill="none" class="quill-logo">
-  <path d="M40 15 A25 25 0 1 1 15 40 A25 25 0 0 1 40 15 Z M40 5 A35 35 0 1 0 75 40 A35 35 0 0 0 40 5 Z" fill="#1A1833"/>
-  <path d="M60 60 L80 80 L70 85 L55 70 Z" fill="#1A1833"/>
-  <text x="95" y="55" font-family="Arial, sans-serif" font-weight="bold" font-size="48" fill="#1A1833">Quill</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
+  <!-- Lupe Icon (Outline) -->
+  <circle cx="22" cy="22" r="15" stroke="#1A1833" stroke-width="3" fill="none"/>
+  <line x1="33" y1="33" x2="45" y2="45" stroke="#1A1833" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- "Quill" Text als Pfade (ohne font dependency) -->
+  <g fill="#1A1833">
+    <!-- Q -->
+    <path d="M 60 18 Q 60 12 64 9 Q 68 6 74 6 Q 80 6 84 9 Q 88 12 88 18 L 88 28 Q 88 34 84 37 Q 80 40 74 40 Q 68 40 64 37 Q 60 34 60 28 Z M 65 18 L 65 28 Q 65 31 67 33 Q 69 34 74 34 Q 79 34 81 33 Q 83 31 83 28 L 83 18 Q 83 15 81 13 Q 79 12 74 12 Q 69 12 67 13 Q 65 15 65 18 Z M 80 35 L 87 42 L 82 42 L 75 35 Z"/>
+    <!-- u -->
+    <path d="M 95 14 L 100 14 L 100 28 Q 100 31 101 32 Q 102 33 105 33 Q 108 33 109 32 Q 110 31 110 28 L 110 14 L 115 14 L 115 28 Q 115 34 111 37 Q 107 40 105 40 Q 103 40 99 37 Q 95 34 95 28 Z"/>
+    <!-- i -->
+    <path d="M 122 14 L 127 14 L 127 40 L 122 40 Z M 122 6 L 127 6 L 127 11 L 122 11 Z"/>
+    <!-- l -->
+    <path d="M 134 6 L 139 6 L 139 40 L 134 40 Z"/>
+    <!-- l -->
+    <path d="M 146 6 L 151 6 L 151 40 L 146 40 Z"/>
+  </g>
 </svg>
