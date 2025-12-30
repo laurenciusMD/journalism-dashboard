@@ -13,6 +13,7 @@ import postgresService from './services/postgresService.js';
 import dossiersRouter from './routes/dossiers.js';
 import personsRouter from './routes/persons.js';
 import uploadRouter from './routes/upload.js';
+import aiRouter from './routes/ai.js';
 
 // ES module workaround for __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -222,6 +223,9 @@ app.get('/api/version', (req, res) => {
 app.use('/api/dossiers', dossiersRouter);
 app.use('/api/persons', personsRouter);
 app.use('/api/upload', uploadRouter);
+
+// AI Configuration Routes
+app.use('/api/v2/ai', aiRouter);
 
 // AI Routes - Claude
 app.post('/api/ai/claude/generate', requireAuth, async (req, res) => {

@@ -1,7 +1,7 @@
 {
   "name": "quill-frontend",
-  "version": "0.8.0",
-  "description": "Frontend for Quill - Journalism Research Platform",
+  "version": "0.9.0",
+  "description": "Frontend for Quill - Investigative Journalism Intelligence Platform",
   "author": "Laurencius",
   "license": "MIT",
   "private": true,

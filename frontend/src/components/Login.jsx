@@ -44,14 +44,14 @@ function Login({ onLoginSuccess }) {
   return (
     <div className="login-container">
       <div className="login-box">
-        <img
-          src="/images/logo-quill.svg"
-          alt="Quill Logo"
-          className="login-logo"
-        />
-        <p className="login-subtitle">
-          Ihre zentrale Arbeitsumgebung für investigativen Journalismus
-        </p>
+        <div className="login-header">
+          <img
+            src="/images/logo-quill-with-claim.svg"
+            alt="Quill Logo"
+            className="login-logo"
+            style={{ width: '100%', maxWidth: '500px', margin: '0 auto 1rem' }}
+          />
+        </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           {error && (
@@ -115,9 +115,7 @@ function Login({ onLoginSuccess }) {
         </form>
 
         <div className="login-footer">
-          <p style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
-            Version 0.8.0 | © 2024-2025 Laurencius
-          </p>
+          <p className="login-version">Version 0.9.0 | © 2024-2025 Quill</p>
         </div>
       </div>
     </div>

@@ -69,18 +69,21 @@ function Register({ onRegisterSuccess }) {
 
   return (
     <div className="login-container">
-      <div className="login-box">
-        <img
-          src="/images/logo-quill.svg"
-          alt="Quill Logo"
-          className="login-logo"
-        />
-        <h2 style={{ color: 'var(--primary-text)', marginBottom: '10px' }}>Ersteinrichtung</h2>
-        <p className="login-subtitle">
-          Erstellen Sie Ihren Account für Dashboard & Nextcloud
-        </p>
+      <div className="register-box">
+        <div className="register-header">
+          <img
+            src="/images/logo-quill-with-claim.svg"
+            alt="Quill Logo"
+            className="register-logo"
+            style={{ width: '100%', maxWidth: '500px', margin: '0 auto 1rem' }}
+          />
+          <h2>Ersteinrichtung</h2>
+          <p className="register-subtitle">
+            Erstellen Sie Ihren Account für Dashboard & Nextcloud
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
+        <form onSubmit={handleSubmit} className="register-form">
           {error && (
             <div style={{
               padding: '10px',
