@@ -130,35 +130,49 @@ function App() {
             className={`nav-button ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
-            <span className="nav-icon">🏠</span>
+            <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
             <span>Übersicht</span>
           </button>
           <button
             className={`nav-button ${activeTab === 'research' ? 'active' : ''}`}
             onClick={() => setActiveTab('research')}
           >
-            <span className="nav-icon">✍️</span>
+            <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
             <span>Schreiben (Claude)</span>
           </button>
           <button
             className={`nav-button ${activeTab === 'summarize' ? 'active' : ''}`}
             onClick={() => setActiveTab('summarize')}
           >
-            <span className="nav-icon">🔍</span>
+            <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
             <span>Recherche (Gemini)</span>
           </button>
           <button
             className={`nav-button ${activeTab === 'correct' ? 'active' : ''}`}
             onClick={() => setActiveTab('correct')}
           >
-            <span className="nav-icon">✅</span>
+            <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            </svg>
             <span>Umformen (ChatGPT)</span>
           </button>
           <button
             className={`nav-button ${activeTab === 'files' ? 'active' : ''}`}
             onClick={() => setActiveTab('files')}
           >
-            <span className="nav-icon">📁</span>
+            <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
             <span>Dateien</span>
           </button>
         </nav>
@@ -283,9 +297,10 @@ function OverviewPanel({ setActiveTab }) {
         <div className="workflow-card">
           <div className="card-header">
             <div className="card-icon">
-              <svg viewBox="0 0 48 48">
-                <circle cx="18" cy="18" r="10" strokeWidth="2"/>
-                <line x1="25" y1="25" x2="35" y2="35" strokeWidth="2"/>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                <circle cx="11" cy="13" r="3"/>
+                <line x1="13.35" y1="15.35" x2="16" y2="18"/>
               </svg>
             </div>
             <div>
@@ -301,11 +316,10 @@ function OverviewPanel({ setActiveTab }) {
         <div className="workflow-card">
           <div className="card-header">
             <div className="card-icon">
-              <svg viewBox="0 0 48 48">
-                <rect x="8" y="8" width="32" height="32" rx="2" strokeWidth="2"/>
-                <line x1="16" y1="18" x2="32" y2="18" strokeWidth="2"/>
-                <line x1="16" y1="24" x2="32" y2="24" strokeWidth="2"/>
-                <line x1="16" y1="30" x2="24" y2="30" strokeWidth="2"/>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
               </svg>
             </div>
             <div>
@@ -321,9 +335,9 @@ function OverviewPanel({ setActiveTab }) {
         <div className="workflow-card">
           <div className="card-header">
             <div className="card-icon">
-              <svg viewBox="0 0 48 48">
-                <path d="M 16 20 L 22 28 L 32 14" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                <circle cx="24" cy="24" r="16" strokeWidth="2"/>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
             </div>
             <div>
@@ -339,10 +353,12 @@ function OverviewPanel({ setActiveTab }) {
         <div className="workflow-card">
           <div className="card-header">
             <div className="card-icon">
-              <svg viewBox="0 0 48 48">
-                <circle cx="18" cy="18" r="6" strokeWidth="2"/>
-                <circle cx="30" cy="18" r="6" strokeWidth="2"/>
-                <rect x="12" y="28" width="24" height="12" rx="2" strokeWidth="2"/>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="10" rx="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <path d="M12 7v4"/>
+                <line x1="8" y1="16" x2="8" y2="16"/>
+                <line x1="16" y1="16" x2="16" y2="16"/>
               </svg>
             </div>
             <div>
@@ -358,11 +374,9 @@ function OverviewPanel({ setActiveTab }) {
         <div className="workflow-card">
           <div className="card-header">
             <div className="card-icon">
-              <svg viewBox="0 0 48 48">
-                <rect x="8" y="10" width="32" height="28" rx="4" strokeWidth="2"/>
-                <circle cx="16" cy="20" r="3" strokeWidth="2"/>
-                <circle cx="32" cy="20" r="3" strokeWidth="2"/>
-                <line x1="8" y1="28" x2="40" y2="28" strokeWidth="2"/>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+                <line x1="12" y1="18" x2="12.01" y2="18"/>
               </svg>
             </div>
             <div>
@@ -378,9 +392,8 @@ function OverviewPanel({ setActiveTab }) {
         <div className="workflow-card">
           <div className="card-header">
             <div className="card-icon">
-              <svg viewBox="0 0 48 48">
-                <path d="M 24 8 L 24 18 M 24 30 L 24 40 M 12 24 L 18 24 M 30 24 L 36 24" strokeWidth="2" strokeLinecap="round"/>
-                <circle cx="24" cy="24" r="18" strokeWidth="2"/>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
               </svg>
             </div>
             <div>
