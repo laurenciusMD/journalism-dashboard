@@ -4,6 +4,7 @@ import Login from './components/Login.jsx'
 import Register from './components/Register.jsx'
 import ResearchPanel from './components/ResearchPanel.jsx'
 import TextFileReader from './components/TextFileReader.jsx'
+import AISettings from './components/AISettings.jsx'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -199,7 +200,7 @@ function App() {
       </div>
 
       <main className="content-area">
-        {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+        {showSettings && <AISettings onClose={() => setShowSettings(false)} />}
         {!showSettings && activeTab === 'overview' && <OverviewPanel setActiveTab={setActiveTab} />}
         {!showSettings && activeTab === 'research' && <ResearchPanel />}
         {!showSettings && activeTab === 'summarize' && <SummarizePanel sharedContent={sharedContent} setSharedContent={setSharedContent} setActiveTab={setActiveTab} />}
@@ -222,87 +223,6 @@ function App() {
 
       {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
       {showRoadmap && <RoadmapModal onClose={() => setShowRoadmap(false)} />}
-    </div>
-  )
-}
-
-function SettingsPanel({ onClose }) {
-  const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem('journalism-settings')
-    return saved ? JSON.parse(saved) : {
-      anthropicKey: '',
-      geminiKey: '',
-      openaiKey: ''
-    }
-  })
-
-  const handleSave = () => {
-    // Save to localStorage
-    localStorage.setItem('journalism-settings', JSON.stringify(settings))
-    alert('✅ Einstellungen gespeichert!')
-    onClose()
-  }
-
-  return (
-    <div className="settings-overlay">
-      <div className="settings-panel">
-        <div className="settings-header">
-          <h2>⚙️ Einstellungen</h2>
-          <button className="close-btn" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="settings-content">
-          <section className="settings-section">
-            <h3>🤖 KI-Dienste</h3>
-
-            <div className="setting-group">
-              <label>Claude AI (Anthropic) API Key</label>
-              <input
-                type="password"
-                placeholder="sk-ant-..."
-                value={settings.anthropicKey}
-                onChange={(e) => setSettings({...settings, anthropicKey: e.target.value})}
-              />
-              <small>Erhalten Sie Ihren Key bei <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></small>
-            </div>
-
-            <div className="setting-group">
-              <label>Google Gemini API Key</label>
-              <input
-                type="password"
-                placeholder="AIza..."
-                value={settings.geminiKey}
-                onChange={(e) => setSettings({...settings, geminiKey: e.target.value})}
-              />
-              <small>Erhalten Sie Ihren Key bei <a href="https://makersuite.google.com" target="_blank">Google AI Studio</a></small>
-            </div>
-
-            <div className="setting-group">
-              <label>OpenAI API Key</label>
-              <input
-                type="password"
-                placeholder="sk-..."
-                value={settings.openaiKey}
-                onChange={(e) => setSettings({...settings, openaiKey: e.target.value})}
-              />
-              <small>Erhalten Sie Ihren Key bei <a href="https://platform.openai.com" target="_blank">platform.openai.com</a></small>
-            </div>
-          </section>
-
-          <section className="settings-section">
-            <h3>ℹ️ Info</h3>
-            <div className="info-box">
-              <p><strong>☁️ Nextcloud:</strong> Bereits konfiguriert! Läuft auf <a href="http://localhost:8080" target="_blank">http://localhost:8080</a></p>
-              <p>Nutzen Sie Ihre Registrierungs-Credentials für den Zugriff.</p>
-            </div>
-          </section>
-        </div>
-
-        <div className="settings-footer">
-          <button className="btn-secondary" onClick={onClose}>Abbrechen</button>
-          <button className="btn-primary" onClick={handleSave}>💾 Speichern</button>
-        </div>
-      </div>
     </div>
   )
 }
