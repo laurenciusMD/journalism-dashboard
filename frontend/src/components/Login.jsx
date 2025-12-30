@@ -44,14 +44,22 @@ function Login({ onLoginSuccess }) {
   return (
     <div className="login-container">
       <div className="login-box">
-        <div className="login-header">
+        <div className="login-header" style={{ textAlign: 'center' }}>
           <img
             src="/images/logo-quill-header-hell.svg"
             alt="Quill Logo"
             className="login-logo"
-            style={{ height: '50px', marginBottom: '1rem' }}
+            style={{
+              height: '80px',
+              marginBottom: '1.5rem',
+              display: 'block',
+              marginLeft: 'auto',
+              marginRight: 'auto'
+            }}
           />
-          <p className="login-subtitle">Ihre zentrale Arbeitsumgebung für investigativen Journalismus</p>
+          <p className="login-subtitle" style={{ textAlign: 'center' }}>
+            Ihre zentrale Arbeitsumgebung für investigativen Journalismus
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
