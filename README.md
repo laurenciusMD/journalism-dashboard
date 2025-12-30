@@ -64,12 +64,35 @@ Quill entwickelt sich zur vollwertigen **Investigative Suite**. Geplant sind:
 
 ---
 
-### Voraussetzungen
+## 🚀 Installation
+
+### Schnellstart auf blankem Ubuntu-System
+
+Für eine vollautomatische Installation auf einem neuen Ubuntu-Server:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/laurenciusMD/journalism-dashboard/main/setup.sh | bash
+```
+
+Oder manuell:
+
+```bash
+git clone https://github.com/laurenciusMD/journalism-dashboard.git
+cd journalism-dashboard
+chmod +x setup.sh
+./setup.sh
+```
+
+**Detaillierte Anleitung:** Siehe [SETUP_UBUNTU.md](SETUP_UBUNTU.md)
+
+---
+
+### Voraussetzungen (für manuelle Installation)
 - Node.js 18+ und npm
 - Git
-- API-Keys für Claude, Gemini und OpenAI
+- API-Keys für Claude, Gemini und OpenAI (optional)
 
-### Setup
+### Manual Setup (Development)
 
 1. **Repository klonen**
 ```bash
