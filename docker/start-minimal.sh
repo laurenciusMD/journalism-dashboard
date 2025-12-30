@@ -140,9 +140,52 @@ if [ "$NEXTCLOUD_HAS_DATA" = false ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
     echo "   Admin password: $NEXTCLOUD_ADMIN_PASSWORD"
     echo "   Database: PostgreSQL"
 elif [ "$NEXTCLOUD_HAS_DATA" = true ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
-    echo "⚠️  Nextcloud data exists but not properly configured"
-    echo "   Skipping installation to preserve existing data"
-    echo "   Please check Nextcloud manually at http://localhost:8080"
+    echo "🔧 Nextcloud data exists but config missing - auto-repairing..."
+
+    # Get existing instanceid if it exists, otherwise generate new one
+    INSTANCE_ID="oc$(openssl rand -hex 6)"
+    if [ -f "/var/www/nextcloud/config/config.php" ]; then
+        EXISTING_ID=$(grep -oP "(?<='instanceid' => ')[^']*" /var/www/nextcloud/config/config.php 2>/dev/null || echo "")
+        if [ ! -z "$EXISTING_ID" ]; then
+            INSTANCE_ID="$EXISTING_ID"
+            echo "   Using existing instanceid: $INSTANCE_ID"
+        fi
+    fi
+
+    # Create proper config.php
+    cat > /var/www/nextcloud/config/config.php <<EOF
+<?php
+\$CONFIG = array (
+  'instanceid' => '$INSTANCE_ID',
+  'passwordsalt' => '$(openssl rand -hex 16)',
+  'secret' => '$(openssl rand -hex 32)',
+  'trusted_domains' =>
+  array (
+    0 => 'localhost',
+    1 => '127.0.0.1',
+    2 => '*',
+  ),
+  'datadirectory' => '$NEXTCLOUD_DATA',
+  'dbtype' => 'pgsql',
+  'version' => '28.0.2.5',
+  'overwrite.cli.url' => 'http://localhost:8080',
+  'overwriteprotocol' => 'http',
+  'dbname' => '$NEXTCLOUD_DB',
+  'dbhost' => 'localhost',
+  'dbport' => '',
+  'dbtableprefix' => 'oc_',
+  'dbuser' => '$NEXTCLOUD_DB_USER',
+  'dbpassword' => '$NEXTCLOUD_DB_PASSWORD',
+  'installed' => true,
+);
+EOF
+
+    # Set correct permissions
+    chown www-data:www-data /var/www/nextcloud/config/config.php
+    chmod 640 /var/www/nextcloud/config/config.php
+
+    echo "✅ Nextcloud config auto-repaired!"
+    echo "   Your existing data and database are preserved"
 else
     echo "✅ Using existing Nextcloud installation"
 fi
