@@ -239,19 +239,19 @@ configure_environment() {
     # Update .env file
     print_info "Writing configuration to .env..."
 
-    # Using sed to replace values in .env
-    sed -i "s/^DASHBOARD_USERNAME=.*/DASHBOARD_USERNAME=$DASHBOARD_USERNAME/" .env
-    sed -i "s/^DASHBOARD_PASSWORD=.*/DASHBOARD_PASSWORD=$DASHBOARD_PASSWORD/" .env
-    sed -i "s/^SESSION_SECRET=.*/SESSION_SECRET=$SESSION_SECRET/" .env
-    sed -i "s/^ENCRYPTION_KEY=.*/ENCRYPTION_KEY=$ENCRYPTION_KEY/" .env
-    sed -i "s/^NEXTCLOUD_DB_PASSWORD=.*/NEXTCLOUD_DB_PASSWORD=$NEXTCLOUD_DB_PASSWORD/" .env
-    sed -i "s/^NEXTCLOUD_DB_ROOT_PASSWORD=.*/NEXTCLOUD_DB_ROOT_PASSWORD=$NEXTCLOUD_DB_ROOT_PASSWORD/" .env
+    # Using sed with | delimiter to safely handle special characters in passwords/secrets
+    sed -i "s|^DASHBOARD_USERNAME=.*|DASHBOARD_USERNAME=$DASHBOARD_USERNAME|" .env
+    sed -i "s|^DASHBOARD_PASSWORD=.*|DASHBOARD_PASSWORD=$DASHBOARD_PASSWORD|" .env
+    sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=$SESSION_SECRET|" .env
+    sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$ENCRYPTION_KEY|" .env
+    sed -i "s|^NEXTCLOUD_DB_PASSWORD=.*|NEXTCLOUD_DB_PASSWORD=$NEXTCLOUD_DB_PASSWORD|" .env
+    sed -i "s|^NEXTCLOUD_DB_ROOT_PASSWORD=.*|NEXTCLOUD_DB_ROOT_PASSWORD=$NEXTCLOUD_DB_ROOT_PASSWORD|" .env
 
     # Add JOURNALISM_DB_PASSWORD if not present
     if ! grep -q "^JOURNALISM_DB_PASSWORD=" .env; then
         echo "JOURNALISM_DB_PASSWORD=$JOURNALISM_DB_PASSWORD" >> .env
     else
-        sed -i "s/^JOURNALISM_DB_PASSWORD=.*/JOURNALISM_DB_PASSWORD=$JOURNALISM_DB_PASSWORD/" .env
+        sed -i "s|^JOURNALISM_DB_PASSWORD=.*|JOURNALISM_DB_PASSWORD=$JOURNALISM_DB_PASSWORD|" .env
     fi
 
     print_success "Environment configured successfully"
