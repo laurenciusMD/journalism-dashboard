@@ -77,8 +77,20 @@ else
     echo "✅ PostgreSQL already running"
 fi
 
-if [ ! -f "/var/www/nextcloud/config/config.php" ]; then
+# Check if Nextcloud is properly installed
+NEXTCLOUD_INSTALLED=false
+if [ -f "/var/www/nextcloud/config/config.php" ]; then
+    if grep -q "'installed' => true" /var/www/nextcloud/config/config.php; then
+        NEXTCLOUD_INSTALLED=true
+    fi
+fi
+
+if [ "$NEXTCLOUD_INSTALLED" = false ]; then
     echo "🔧 Installing Nextcloud with PostgreSQL..."
+
+    # Remove incomplete config if it exists
+    rm -f /var/www/nextcloud/config/config.php
+    rm -f /var/www/nextcloud/config/CAN_INSTALL
 
     cd /var/www/nextcloud
     su -s /bin/bash www-data -c "php occ maintenance:install \
@@ -101,6 +113,9 @@ if [ ! -f "/var/www/nextcloud/config/config.php" ]; then
 
     # Configure cron
     su -s /bin/bash www-data -c "php occ background:cron"
+
+    # Ensure CAN_INSTALL is removed
+    rm -f /var/www/nextcloud/config/CAN_INSTALL
 
     echo "✅ Nextcloud installation complete!"
     echo "   Admin user: $NEXTCLOUD_ADMIN"

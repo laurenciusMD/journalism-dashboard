@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" fill="none">
+  <!-- Magnifying Glass Icon -->
+  <circle cx="35" cy="35" r="18" stroke="url(#grad1)" stroke-width="4" fill="none"/>
+  <circle cx="35" cy="35" r="12" stroke="url(#grad1)" stroke-width="3" fill="none"/>
+  <line x1="48" y1="48" x2="60" y2="60" stroke="url(#grad1)" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6a5acd;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#483d8b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- "Quill" Text as SVG Paths (converted from Arial Bold 42px) -->
+  <!-- Q -->
+  <path d="M 85 29 Q 85 21 91 17 Q 97 13 105 13 Q 113 13 119 17 Q 125 21 125 29 L 125 43 Q 125 51 119 55 Q 113 59 105 59 Q 97 59 91 55 Q 85 51 85 43 Z M 92 29 L 92 43 Q 92 47 95 49 Q 98 51 105 51 Q 112 51 115 49 Q 118 47 118 43 L 118 29 Q 118 25 115 23 Q 112 21 105 21 Q 98 21 95 23 Q 92 25 92 29 Z M 115 52 L 124 61 L 117 61 L 108 52 Z" fill="white"/>
+
+  <!-- u -->
+  <path d="M 133 27 L 140 27 L 140 45 Q 140 49 142 51 Q 144 53 148 53 Q 152 53 154 51 Q 156 49 156 45 L 156 27 L 163 27 L 163 45 Q 163 53 158 57 Q 153 61 148 61 Q 143 61 138 57 Q 133 53 133 45 Z" fill="white"/>
+
+  <!-- i -->
+  <path d="M 172 27 L 179 27 L 179 59 L 172 59 Z M 172 15 L 179 15 L 179 22 L 172 22 Z" fill="white"/>
+
+  <!-- l -->
+  <path d="M 188 15 L 195 15 L 195 59 L 188 59 Z" fill="white"/>
+
+  <!-- l -->
+  <path d="M 204 15 L 211 15 L 211 59 L 204 59 Z" fill="white"/>
+</svg>
