@@ -62,7 +62,7 @@ services:
     image: laurencius/journalism-dashboard:latest
     container_name: journalism-dashboard
     ports:
-      - "3000:3000"    # Frontend
+      - "3001:3001"    # Frontend
       - "5000:5000"    # Backend API
       - "8080:8080"    # Nextcloud
     volumes:
@@ -112,7 +112,7 @@ docker pull laurencius/journalism-dashboard:latest
 # 3. Container neu starten mit gleichen Volumes
 docker run -d \
   --name journalism-dashboard \
-  -p 3000:3000 \
+  -p 3001:3001 \
   -p 5000:5000 \
   -p 8080:8080 \
   -v journalism-postgres:/var/lib/postgresql/data \
@@ -173,7 +173,7 @@ docker inspect journalism-dashboard | grep -A 5 Health
 ### Services testen:
 ```bash
 # Frontend erreichbar?
-curl http://localhost:3000
+curl http://localhost:3001
 
 # Backend API erreichbar?
 curl http://localhost:5000/api/health
@@ -183,7 +183,7 @@ curl http://localhost:8080
 ```
 
 ### Im Browser:
-1. **Frontend:** http://deine-ip:3000
+1. **Frontend:** http://deine-ip:3001
    - Login sollte funktionieren
    - Alle Dossiers sollten noch da sein
 
