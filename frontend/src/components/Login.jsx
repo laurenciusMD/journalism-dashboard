@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import '../styles/Login.css'
+import '../styles/glassmorphism.css'
 
 function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState('')
@@ -55,50 +55,55 @@ function Login({ onLoginSuccess }) {
 
         <form onSubmit={handleSubmit} className="login-form">
           {error && (
-            <div className="login-error">
+            <div className="login-error" style={{
+              padding: '10px',
+              marginBottom: '15px',
+              background: 'rgba(255, 100, 100, 0.1)',
+              border: '1px solid rgba(255, 100, 100, 0.3)',
+              borderRadius: 'var(--radius-medium)',
+              color: '#d32f2f'
+            }}>
               ⚠️ {error}
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="username">Benutzername</label>
+          <input
+            type="text"
+            className="login-input"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Benutzername"
+            required
+            autoFocus
+            disabled={loading}
+          />
+
+          <input
+            type="password"
+            className="login-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Passwort"
+            required
+            disabled={loading}
+          />
+
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '14px',
+            color: 'var(--secondary-text)',
+            cursor: 'pointer'
+          }}>
             <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Ihr Benutzername"
-              required
-              autoFocus
+              type="checkbox"
+              checked={useNextcloud}
+              onChange={(e) => setUseNextcloud(e.target.checked)}
               disabled={loading}
             />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Passwort</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Ihr Passwort"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="form-group-checkbox">
-            <label className="checkbox-container">
-              <input
-                type="checkbox"
-                checked={useNextcloud}
-                onChange={(e) => setUseNextcloud(e.target.checked)}
-                disabled={loading}
-              />
-              <span>Mit Nextcloud-Anmeldung</span>
-            </label>
-            <small>Verwenden Sie Ihre Nextcloud-Zugangsdaten</small>
-          </div>
+            <span>Mit Nextcloud-Anmeldung</span>
+          </label>
 
           <button
             type="submit"
@@ -110,20 +115,8 @@ function Login({ onLoginSuccess }) {
         </form>
 
         <div className="login-footer">
-          <p>
-            <small>
-              💡 <strong>Hinweis:</strong> Verwenden Sie die Anmeldedaten, die in den
-              Docker-Umgebungsvariablen konfiguriert sind.
-            </small>
-          </p>
           <p className="login-version">Version 0.9.0 | © 2024-2025 Quill</p>
         </div>
-      </div>
-
-      <div className="login-background">
-        <div className="gradient-blob blob-1"></div>
-        <div className="gradient-blob blob-2"></div>
-        <div className="gradient-blob blob-3"></div>
       </div>
     </div>
   )

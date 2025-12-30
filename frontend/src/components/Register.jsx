@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import './Register.css'
+import '../styles/glassmorphism.css'
 
 function Register({ onRegisterSuccess }) {
   const [username, setUsername] = useState('')
@@ -67,13 +68,7 @@ function Register({ onRegisterSuccess }) {
   }
 
   return (
-    <div className="register-container">
-      <div className="register-background">
-        <div className="gradient-orb orb-1"></div>
-        <div className="gradient-orb orb-2"></div>
-        <div className="gradient-orb orb-3"></div>
-      </div>
-
+    <div className="login-container">
       <div className="register-box">
         <div className="register-header">
           <img
@@ -90,99 +85,94 @@ function Register({ onRegisterSuccess }) {
 
         <form onSubmit={handleSubmit} className="register-form">
           {error && (
-            <div className="error-message">
+            <div style={{
+              padding: '10px',
+              marginBottom: '15px',
+              background: 'rgba(255, 100, 100, 0.1)',
+              border: '1px solid rgba(255, 100, 100, 0.3)',
+              borderRadius: 'var(--radius-medium)',
+              color: '#d32f2f',
+              fontSize: '14px'
+            }}>
               ⚠️ {error}
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="username">Benutzername</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="IhrBenutzername"
-              autoComplete="username"
-              autoFocus
-              required
-              minLength={3}
-            />
-            <small>Mindestens 3 Zeichen. Wird für Dashboard & Nextcloud verwendet.</small>
-          </div>
+          <input
+            type="text"
+            className="login-input"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Benutzername (mind. 3 Zeichen)"
+            autoComplete="username"
+            autoFocus
+            required
+            minLength={3}
+          />
 
-          <div className="form-group">
-            <label htmlFor="email">E-Mail (optional)</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="ihre@email.de"
-              autoComplete="email"
-            />
-          </div>
+          <input
+            type="email"
+            className="login-input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="E-Mail (optional)"
+            autoComplete="email"
+          />
 
-          <div className="form-group">
-            <label htmlFor="password">Passwort</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="new-password"
-              required
-              minLength={8}
-            />
-            <small>Mindestens 8 Zeichen. Gilt für beide Systeme.</small>
-          </div>
+          <input
+            type="password"
+            className="login-input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Passwort (mind. 8 Zeichen)"
+            autoComplete="new-password"
+            required
+            minLength={8}
+          />
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Passwort bestätigen</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              autoComplete="new-password"
-              required
-              minLength={8}
-            />
-          </div>
+          <input
+            type="password"
+            className="login-input"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Passwort bestätigen"
+            autoComplete="new-password"
+            required
+            minLength={8}
+          />
 
           <button
             type="submit"
-            className="register-button"
+            className="login-button"
             disabled={loading}
           >
-            {loading ? (
-              <>
-                <span className="spinner"></span>
-                Erstelle Account...
-              </>
-            ) : (
-              <>
-                🚀 Account erstellen & Einloggen
-              </>
-            )}
+            {loading ? '🔄 Erstelle Account...' : '🚀 Account erstellen'}
           </button>
 
-          <div className="register-info">
-            <p className="info-box">
-              ℹ️ <strong>Single Sign-On:</strong><br />
-              Ihr Account wird automatisch in beiden Systemen erstellt:
-            </p>
-            <ul>
-              <li>📰 <strong>Dashboard</strong> (dieser Service)</li>
-              <li>☁️ <strong>Nextcloud</strong> (Cloud-Speicher)</li>
+          <div style={{
+            marginTop: '20px',
+            padding: '15px',
+            background: 'rgba(100, 150, 255, 0.1)',
+            border: '1px solid rgba(100, 150, 255, 0.2)',
+            borderRadius: 'var(--radius-medium)',
+            fontSize: '13px',
+            color: 'var(--secondary-text)',
+            lineHeight: '1.6'
+          }}>
+            <p><strong>ℹ️ Single Sign-On:</strong></p>
+            <p>Ihr Account wird automatisch in beiden Systemen erstellt:</p>
+            <ul style={{ marginLeft: '20px', marginTop: '8px' }}>
+              <li>📰 Dashboard (dieser Service)</li>
+              <li>☁️ Nextcloud (Cloud-Speicher)</li>
             </ul>
-            <p className="info-box">
-              Nach der Registrierung werden Sie automatisch eingeloggt.
-            </p>
           </div>
         </form>
+
+        <div className="login-footer">
+          <p style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
+            Version 0.8.0 | © 2024-2025 Laurencius
+          </p>
+        </div>
       </div>
     </div>
   )

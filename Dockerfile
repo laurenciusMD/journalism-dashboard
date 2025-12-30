@@ -108,13 +108,25 @@ RUN sed -i 's/^Listen 80$/Listen 8080/' /etc/apache2/ports.conf
 # Copy supervisord configuration
 COPY docker/supervisord-minimal.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Copy startup script
+# Copy startup script and version file
 COPY docker/start-minimal.sh /app/start-minimal.sh
+COPY VERSION /app/VERSION
 RUN chmod +x /app/start-minimal.sh
 
 # Set up PostgreSQL user and permissions
 RUN chown -R postgres:postgres /var/lib/postgresql /var/run/postgresql && \
     chmod 2777 /var/run/postgresql
+
+# Metadata labels
+LABEL org.opencontainers.image.title="Quill - Journalism Research Platform" \
+      org.opencontainers.image.description="All-in-one journalism research platform with Nextcloud integration" \
+      org.opencontainers.image.version="0.7.0" \
+      org.opencontainers.image.vendor="Laurencius" \
+      org.opencontainers.image.authors="Laurencius" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.url="https://github.com/laurenciusMD/journalism-dashboard" \
+      org.opencontainers.image.source="https://github.com/laurenciusMD/journalism-dashboard" \
+      org.opencontainers.image.documentation="https://github.com/laurenciusMD/journalism-dashboard/blob/main/README.md"
 
 # Expose ports
 EXPOSE 3001 8080

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './styles/App.css'
+import './styles/glassmorphism.css'
 import Login from './components/Login.jsx'
 import Register from './components/Register.jsx'
 import ResearchPanel from './components/ResearchPanel.jsx'

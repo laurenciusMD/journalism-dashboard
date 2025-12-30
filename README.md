@@ -2,8 +2,8 @@
 
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-laurencius-blue?logo=docker)](https://hub.docker.com/u/laurencius)
 [![Build and Push](https://github.com/laurenciusMD/journalism-dashboard/actions/workflows/docker-hub-deploy.yml/badge.svg)](https://github.com/laurenciusMD/journalism-dashboard/actions/workflows/docker-hub-deploy.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-0.9.0-green)](https://github.com/laurenciusMD/journalism-dashboard/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > **Ihre Story. Unser Puls. Aus ihrer Feder.**
 
@@ -447,8 +447,15 @@ POST /api/ai/openai/transform
 
 ## Lizenz
 
-MIT
+MIT License
+
+Copyright © 2024-2025 Laurencius
 
 ## Support
 
 Bei Fragen oder Problemen öffnen Sie ein Issue im Repository.
+
+---
+
+**Quill** - Ihre zentrale Arbeitsumgebung für investigativen Journalismus
+Version 0.7.0 | © 2024-2025 Laurencius | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md)

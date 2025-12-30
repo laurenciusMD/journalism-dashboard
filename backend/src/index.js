@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 import { requireAuth } from './middleware/auth.js';
 import nextcloudProvisioning from './services/nextcloudProvisioningService.js';
 import postgresService from './services/postgresService.js';
@@ -17,6 +18,12 @@ import aiRouter from './routes/ai.js';
 // ES module workaround for __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Read version from package.json
+const packageJson = JSON.parse(
+  readFileSync(path.join(__dirname, '../package.json'), 'utf-8')
+);
+const APP_VERSION = packageJson.version;
 
 // Load environment variables
 dotenv.config();
@@ -195,6 +202,17 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     message: 'Journalism Dashboard API is running',
+    version: APP_VERSION,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Version endpoint (public - no auth required)
+app.get('/api/version', (req, res) => {
+  res.json({
+    version: APP_VERSION,
+    name: 'Journalism Dashboard',
+    backend: packageJson.version,
     timestamp: new Date().toISOString()
   });
 });
@@ -364,14 +382,15 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`
 ╔═══════════════════════════════════════════════════════╗
-║   📰 Journalism Dashboard                            ║
+║   🔍 Quill v${APP_VERSION.padEnd(37)} ║
+║      Journalism Research Platform                    ║
 ║                                                       ║
 ║   🚀 Server running on http://localhost:${PORT}       ║
 ║   📱 Dashboard UI: http://localhost:${PORT}           ║
 ║   🔌 API: http://localhost:${PORT}/api               ║
 ║                                                       ║
-║   Databases:                                         ║
-║   ✓ SQLite (User Management)                         ║
+║   Authentication & Storage:                          ║
+║   ✓ Nextcloud (Single Sign-On)                       ║
 ║   ✓ PostgreSQL (Investigations)                      ║
 ║                                                       ║
 ║   AI Integration ready:                              ║
@@ -382,6 +401,8 @@ async function startServer() {
 ║   Cloud Storage ready:                               ║
 ║   ✓ Google Drive                                     ║
 ║   ✓ Private Cloud (WebDAV)                           ║
+║                                                       ║
+║   © 2024-2025 Laurencius                             ║
 ╚═══════════════════════════════════════════════════════╝
       `);
     });

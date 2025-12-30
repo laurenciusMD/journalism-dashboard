@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <!-- Lupe Icon -->
+  <g fill="#1A1833">
+    <circle cx="22" cy="22" r="15" stroke="#1A1833" stroke-width="3" fill="none"/>
+    <line x1="33" y1="33" x2="45" y2="45" stroke="#1A1833" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- "Quill" Text -->
+  <text x="55" y="40" font-family="Arial, sans-serif" font-weight="bold" font-size="32" fill="#1A1833">Quill</text>
+</svg>

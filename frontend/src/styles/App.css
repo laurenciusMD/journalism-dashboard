@@ -1,162 +1,19 @@
-/* ===== Dashboard Base ===== */
+/* ===== Minimale App.css - Haupt-Styling kommt aus glassmorphism.css ===== */
+
+/* Dashboard Base - Background wird von glassmorphism.css/body übernommen */
 .dashboard {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7b4397 100%);
 }
 
-/* ===== Header ===== */
-.dashboard-header {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 1.5rem 2rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-}
-
-.header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
-}
-
-.header-title h1 {
-  font-size: 2rem;
-  margin: 0;
-  background: linear-gradient(90deg, #fff, #a8d0ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.subtitle {
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.9rem;
-  margin-top: 0.3rem;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.username-display {
-  color: white;
-  font-weight: 500;
-  padding: 0.6rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  font-size: 0.9rem;
-}
-
-.logout-btn {
-  padding: 0.6rem 1.2rem;
-  border: none;
-  background: rgba(255, 100, 100, 0.2);
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.logout-btn:hover {
-  background: rgba(255, 100, 100, 0.4);
-  transform: translateY(-1px);
-}
-
-.search-box {
-  padding: 0.6rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  min-width: 200px;
-}
-
-.search-box::placeholder {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.search-box:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.settings-btn {
-  padding: 0.6rem 1.2rem;
-  border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.settings-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-}
-
-/* ===== Navigation ===== */
-.dashboard-nav {
-  display: flex;
-  gap: 0.5rem;
-  padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  overflow-x: auto;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.nav-btn {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
-  white-space: nowrap;
-}
-
-.nav-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
-}
-
-.nav-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-/* ===== Main Content ===== */
-.dashboard-content {
-  flex: 1;
-  padding: 2rem;
-  max-width: 1400px;
-  width: 100%;
-  margin: 0 auto;
-}
-
+/* ===== Panels ===== */
 .panel {
   background: rgba(255, 255, 255, 0.95);
   border-radius: 16px;
   padding: 2rem;
   color: #333;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   animation: fadeIn 0.3s ease-in;
 }
 
@@ -173,124 +30,8 @@
 
 .panel h2 {
   margin-bottom: 1.5rem;
-  color: #1e3c72;
+  color: var(--primary-text);
   font-size: 1.8rem;
-}
-
-/* ===== Feature Cards Grid ===== */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.feature-card {
-  padding: 1.5rem;
-  border-radius: 12px;
-  color: white;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
-  pointer-events: none;
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
-}
-
-.card-purple {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.card-blue {
-  background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
-}
-
-.card-green {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-}
-
-.card-orange {
-  background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
-}
-
-.card-research {
-  background: linear-gradient(135deg, #134e5e 0%, #71b280 100%);
-}
-
-.card-icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.feature-card h3 {
-  margin: 0.5rem 0;
-  font-size: 1.2rem;
-}
-
-.feature-card p {
-  font-size: 0.9rem;
-  opacity: 0.95;
-  line-height: 1.5;
-  margin: 0;
-}
-
-/* ===== Quick Actions ===== */
-.quick-actions-section {
-  margin-top: 2rem;
-}
-
-.quick-actions-section h3 {
-  margin-bottom: 1rem;
-  color: #1e3c72;
-  font-size: 1.4rem;
-}
-
-.action-buttons-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 1rem;
-}
-
-.action-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1.5rem 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.action-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-}
-
-.action-icon {
-  font-size: 2rem;
-}
-
-.action-label {
-  font-size: 0.9rem;
-  font-weight: 500;
 }
 
 /* ===== Settings Overlay ===== */
@@ -300,7 +41,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
@@ -330,7 +71,7 @@
 
 .settings-header h2 {
   margin: 0;
-  color: #1e3c72;
+  color: var(--primary-text);
   font-size: 1.5rem;
 }
 
@@ -365,7 +106,7 @@
 }
 
 .settings-section h3 {
-  color: #1e3c72;
+  color: var(--primary-text);
   font-size: 1.2rem;
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
@@ -397,7 +138,7 @@
 
 .setting-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #7FC1CC;
 }
 
 .setting-group small {
@@ -408,7 +149,7 @@
 }
 
 .setting-group small a {
-  color: #667eea;
+  color: #7FC1CC;
   text-decoration: none;
 }
 
@@ -435,13 +176,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--button-gradient);
   color: white;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(127, 193, 204, 0.4);
 }
 
 .btn-secondary {
@@ -454,8 +195,7 @@
 }
 
 /* ===== Form Elements ===== */
-.input-area,
-.search-input {
+.input-area {
   width: 100%;
   padding: 1rem;
   border: 2px solid #ddd;
@@ -467,17 +207,16 @@
   color: #333;
 }
 
-.input-area:focus,
-.search-input:focus {
+.input-area:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #7FC1CC;
 }
 
 .generate-btn,
 .search-btn,
 .transform-btn {
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--button-gradient);
   color: white;
   border: none;
   border-radius: 8px;
@@ -492,7 +231,7 @@
 .search-btn:hover,
 .transform-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 20px rgba(127, 193, 204, 0.4);
 }
 
 .result-area {
@@ -500,12 +239,12 @@
   padding: 1.5rem;
   background: #f8f9fa;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #7FC1CC;
 }
 
 .result-area h3 {
   margin-bottom: 1rem;
-  color: #1e3c72;
+  color: var(--primary-text);
 }
 
 .result-content {
@@ -539,7 +278,7 @@
 
 .transform-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #7FC1CC;
 }
 
 /* ===== File Management ===== */
@@ -559,7 +298,7 @@
 }
 
 .storage-tab.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--button-gradient);
   color: white;
 }
 
@@ -589,99 +328,6 @@
   color: #666;
   font-size: 0.9rem;
   font-style: italic;
-}
-
-/* ===== Footer ===== */
-.dashboard-footer {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 1rem;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.7);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.dashboard-footer p {
-  margin: 0.3rem 0;
-  font-size: 0.85rem;
-}
-
-.footer-info a {
-  color: rgba(255, 255, 255, 0.8);
-  text-decoration: none;
-  margin: 0 0.5rem;
-}
-
-.footer-info a:hover {
-  color: white;
-  text-decoration: underline;
-}
-
-/* ===== Loading Screen ===== */
-.loading-screen {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-}
-
-.loading-spinner {
-  text-align: center;
-  color: white;
-}
-
-.loading-spinner h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.loading-spinner p {
-  font-size: 1.2rem;
-  opacity: 0.8;
-}
-
-/* ===== Responsive Design ===== */
-@media (max-width: 768px) {
-  .header-content {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .dashboard-header h1 {
-    font-size: 1.8rem;
-  }
-
-  .header-actions {
-    width: 100%;
-  }
-
-  .search-box {
-    flex: 1;
-  }
-
-  .cards-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-nav {
-    padding: 0.5rem 1rem;
-  }
-
-  .dashboard-content {
-    padding: 1rem;
-  }
-
-  .action-buttons-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .settings-panel {
-    width: 95%;
-    max-height: 95vh;
-  }
-
-  .settings-content {
-    padding: 1rem;
-  }
 }
 
 /* GPT Card Actions */
@@ -726,4 +372,20 @@
 .gpt-link:hover {
   background: #1976d2;
   text-decoration: none;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+  .panel {
+    padding: 1rem;
+  }
+
+  .settings-panel {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .settings-content {
+    padding: 1rem;
+  }
 }

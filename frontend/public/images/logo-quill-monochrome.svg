@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" fill="none">
+  <path d="M25,10 A15,15 0 1,1 10,25 A15,15 0 0,1 25,10 Z M25,5 A20,20 0 1,0 45,25 A20,20 0 0,0 25,5 Z" fill="black"/>
+  <path d="M35,35 L45,45 L40,48 L32,42 Z" fill="black"/>
+  <text x="60" y="35" font-family="Arial, sans-serif" font-weight="bold" font-size="28" fill="black">Quill</text>
+</svg>

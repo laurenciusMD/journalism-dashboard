@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" fill="none">
-  <!-- Magnifying Glass Icon -->
+  <!-- Lupe Icon (größer) -->
   <circle cx="35" cy="35" r="18" stroke="url(#grad1)" stroke-width="4" fill="none"/>
   <circle cx="35" cy="35" r="12" stroke="url(#grad1)" stroke-width="3" fill="none"/>
   <line x1="48" y1="48" x2="60" y2="60" stroke="url(#grad1)" stroke-width="6" stroke-linecap="round"/>
