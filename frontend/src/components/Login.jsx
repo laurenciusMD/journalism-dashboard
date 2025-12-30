@@ -45,8 +45,13 @@ function Login({ onLoginSuccess }) {
     <div className="login-container">
       <div className="login-box">
         <div className="login-header">
-          <h1>📰 Journalism Dashboard</h1>
-          <p className="login-subtitle">Ihre zentrale Arbeitsumgebung</p>
+          <img
+            src="/images/logo-quill-header-hell.svg"
+            alt="Quill Logo"
+            className="login-logo"
+            style={{ height: '50px', marginBottom: '1rem' }}
+          />
+          <p className="login-subtitle">Ihre zentrale Arbeitsumgebung für investigativen Journalismus</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -112,7 +117,10 @@ function Login({ onLoginSuccess }) {
               Docker-Umgebungsvariablen konfiguriert sind.
             </small>
           </p>
-          <p className="login-version">Version 0.2.0</p>
+          <p className="login-version">Version 0.7.0</p>
+          <p className="login-copyright">
+            <small>© 2024-2025 Laurencius. All rights reserved.</small>
+          </p>
         </div>
       </div>
 

@@ -1,6 +1,9 @@
 {
-  "name": "journalism-dashboard-backend",
+  "name": "quill-backend",
   "version": "0.7.0",
+  "description": "Backend API for Quill - Journalism Research Platform",
+  "author": "Laurencius",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

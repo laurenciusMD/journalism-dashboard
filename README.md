@@ -1,14 +1,15 @@
-# Journalism Dashboard
+# Quill - Journalism Research Platform
 
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-laurencius-blue?logo=docker)](https://hub.docker.com/u/laurencius)
 [![Build and Push](https://github.com/laurenciusMD/journalism-dashboard/actions/workflows/docker-hub-deploy.yml/badge.svg)](https://github.com/laurenciusMD/journalism-dashboard/actions/workflows/docker-hub-deploy.yml)
+[![Version](https://img.shields.io/badge/Version-0.7.0-green.svg)](https://github.com/laurenciusMD/journalism-dashboard/blob/main/CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Ein zentrales, KI-gestütztes Dashboard für journalistische Arbeit - Ihre persönliche Startseite für Content-Erstellung, Recherche und Informationsmanagement.
+Ein zentrales, KI-gestütztes Dashboard für investigativen Journalismus - Ihre persönliche Arbeitsumgebung für Content-Erstellung, Recherche und Informationsmanagement.
 
 ## Übersicht
 
-Das Journalism Dashboard vereint alle wichtigen Werkzeuge für moderne journalistische Arbeit in einer einzigen, übersichtlichen Oberfläche. Es integriert verschiedene KI-Modelle und Cloud-Speicher-Lösungen, um einen nahtlosen Workflow zu ermöglichen.
+**Quill** vereint alle wichtigen Werkzeuge für moderne journalistische Arbeit in einer einzigen, übersichtlichen Oberfläche. Es integriert verschiedene KI-Modelle, Nextcloud-Storage und leistungsstarke Recherche-Tools, um einen nahtlosen Workflow für investigative Journalisten zu ermöglichen.
 
 ## Kernfunktionen
 
@@ -431,8 +432,15 @@ POST /api/ai/openai/transform
 
 ## Lizenz
 
-MIT
+MIT License
+
+Copyright © 2024-2025 Laurencius
 
 ## Support
 
 Bei Fragen oder Problemen öffnen Sie ein Issue im Repository.
+
+---
+
+**Quill** - Ihre zentrale Arbeitsumgebung für investigativen Journalismus
+Version 0.7.0 | © 2024-2025 Laurencius | [Changelog](CHANGELOG.md) | [Roadmap](ROADMAP.md)

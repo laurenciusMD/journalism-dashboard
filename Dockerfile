@@ -118,10 +118,12 @@ RUN chown -R postgres:postgres /var/lib/postgresql /var/run/postgresql && \
     chmod 2777 /var/run/postgresql
 
 # Metadata labels
-LABEL org.opencontainers.image.title="Journalism Dashboard" \
+LABEL org.opencontainers.image.title="Quill - Journalism Research Platform" \
       org.opencontainers.image.description="All-in-one journalism research platform with Nextcloud integration" \
       org.opencontainers.image.version="0.7.0" \
-      org.opencontainers.image.vendor="Journalism Dashboard Project" \
+      org.opencontainers.image.vendor="Laurencius" \
+      org.opencontainers.image.authors="Laurencius" \
+      org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.url="https://github.com/laurenciusMD/journalism-dashboard" \
       org.opencontainers.image.source="https://github.com/laurenciusMD/journalism-dashboard" \
       org.opencontainers.image.documentation="https://github.com/laurenciusMD/journalism-dashboard/blob/main/README.md"

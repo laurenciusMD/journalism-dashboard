@@ -378,7 +378,8 @@ async function startServer() {
     app.listen(PORT, () => {
       console.log(`
 ╔═══════════════════════════════════════════════════════╗
-║   📰 Journalism Dashboard v${APP_VERSION.padEnd(22)} ║
+║   🔍 Quill v${APP_VERSION.padEnd(37)} ║
+║      Journalism Research Platform                    ║
 ║                                                       ║
 ║   🚀 Server running on http://localhost:${PORT}       ║
 ║   📱 Dashboard UI: http://localhost:${PORT}           ║
@@ -396,6 +397,8 @@ async function startServer() {
 ║   Cloud Storage ready:                               ║
 ║   ✓ Google Drive                                     ║
 ║   ✓ Private Cloud (WebDAV)                           ║
+║                                                       ║
+║   © 2024-2025 Laurencius                             ║
 ╚═══════════════════════════════════════════════════════╝
       `);
     });

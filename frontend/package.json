@@ -1,6 +1,9 @@
 {
-  "name": "journalism-dashboard-frontend",
+  "name": "quill-frontend",
   "version": "0.7.0",
+  "description": "Frontend for Quill - Journalism Research Platform",
+  "author": "Laurencius",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

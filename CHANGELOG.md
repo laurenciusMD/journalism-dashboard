@@ -1,16 +1,29 @@
-# Changelog
+# Changelog - Quill
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
 Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/),
 und dieses Projekt folgt [Semantic Versioning](https://semver.org/lang/de/).
 
+---
+
+**Copyright © 2024-2025 Laurencius**
+
 ## [0.7.0] - 2025-12-30
+
+### 🎨 Rebranding
+- **Neuer Name**: Anwendung umbenannt auf "Quill"
+- **Neues Logo**: Professionelles Logo-Design mit Lupe-Icon
+  - Kombiniertes Logo (Icon + Text) für Header
+  - Icon-only Version für Favicons
+  - Monochrome Version für helle Hintergründe
+- **Copyright-Vermerk**: © 2024-2025 Laurencius in allen Dateien
 
 ### 🎯 Große Änderungen
 - **Effizienz-Optimierung**: Konsolidierung von 3 Datenbanken auf 1 PostgreSQL-Instanz
 - **Single Sign-On**: Nextcloud als einzige Authentifizierungsquelle
 - **All-in-One Container**: PostgreSQL + Redis + Apache + Nextcloud + Dashboard in einem Container
+- **Versionierung**: Umfassendes Versionierungssystem mit VERSION-Datei, API-Endpoints und sichtbaren Versionsanzeigen
 
 ### ✅ Behoben
 - **Apache Port-Konfiguration**: Permanente Lösung für "Listen 808080" Fehler

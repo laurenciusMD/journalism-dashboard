@@ -74,7 +74,12 @@ function App() {
     return (
       <div className="dashboard loading-screen">
         <div className="loading-spinner">
-          <h2>📰 Journalism Dashboard</h2>
+          <img
+            src="/images/logo-quill-icon-hell.svg"
+            alt="Quill Logo"
+            style={{ height: '60px', marginBottom: '1rem', animation: 'pulse 2s infinite' }}
+          />
+          <h2>Quill</h2>
           <p>Lädt...</p>
         </div>
       </div>
@@ -96,7 +101,11 @@ function App() {
       <header className="dashboard-header">
         <div className="header-content">
           <div className="header-title">
-            <h1>📰 Journalism Dashboard</h1>
+            <img
+              src="/images/logo-quill-header-hell.svg"
+              alt="Quill Logo"
+              style={{ height: '40px', marginRight: '1rem' }}
+            />
             <p className="subtitle">Ihre zentrale Arbeitsumgebung für journalistische Arbeit</p>
           </div>
           <div className="header-actions">
@@ -169,11 +178,13 @@ function App() {
       </main>
 
       <footer className="dashboard-footer">
-        <p>Journalism Dashboard v0.1.0 | Powered by Claude, Gemini & ChatGPT</p>
+        <p>
+          <strong>Quill</strong> v0.7.0 | Powered by Claude, Gemini & ChatGPT
+        </p>
         <p className="footer-info">
-          <a href="#" onClick={() => setShowSettings(true)}>Sachsen-Anhalt</a> ·
-          <a href="#privacy"> Extrem rechte gewalt</a> ·
-          Gemini & ChatGPT
+          © 2024-2025 Laurencius ·
+          <a href="#changelog" style={{ marginLeft: '0.5rem' }}>Changelog</a> ·
+          <a href="#roadmap" style={{ marginLeft: '0.5rem' }}>Roadmap</a>
         </p>
       </footer>
     </div>

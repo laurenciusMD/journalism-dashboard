@@ -8,8 +8,10 @@ if [ -f "/app/VERSION" ]; then
 fi
 
 echo "=========================================="
-echo "📰 Journalism Dashboard v${VERSION}"
+echo "🔍 Quill v${VERSION}"
+echo "   Journalism Research Platform"
 echo "   + Nextcloud Integration"
+echo "   © 2024-2025 Laurencius"
 echo "=========================================="
 
 # ===== PostgreSQL Setup =====
