@@ -1004,43 +1004,44 @@ function ChangelogModal({ onClose }) {
 function RoadmapModal({ onClose }) {
   const roadmap = [
     {
-      phase: 'Q1 2025',
+      phase: 'Q1 2025 - Foundation',
       status: 'planned',
       features: [
-        'Echte AI-API Integration (Claude, Gemini, ChatGPT)',
-        'Recherche-Dossiers: Vollständige CRUD-Operationen',
-        'Social Media: Automatisches Posten via APIs',
-        'Benutzer-Rollen & Permissions System'
+        '🤖 Modulare KI-Steuerung: Wähle dein eigenes Modell (Claude, Gemini, GPT) pro Feature',
+        '📰 Portfolio-Tracker: Automatisches MDR-Scraping + Chat mit deinem Archiv (RAG)',
+        '📡 News-Radar: Google News Aggregation mit Nextcloud-Integration',
+        '🏗️ Infrastruktur: Vector-DB (pgvector), Background Jobs, AI-Router'
       ]
     },
     {
-      phase: 'Q2 2025',
+      phase: 'Q2 2025 - Intelligence',
       status: 'planned',
       features: [
-        'Multi-User Collaboration in Echtzeit',
-        'Erweiterte Datei-Verarbeitung (PDF-Textextraktion)',
-        'Integrierter Markdown-Editor',
-        'Export-Funktionen (PDF, DOCX, HTML)'
+        '🎙️ Interview-Vault: Audio-Upload + automatische Transkription (Whisper)',
+        '💬 Smart Quotes: Click-to-copy mit Timecodes aus Interviews',
+        '📊 Erweiterte RAG: Multi-Source Search (eigenes Archiv + Web)',
+        '🔐 Benutzer-Rollen & Permissions für Team-Workflows'
       ]
     },
     {
-      phase: 'Q3 2025',
+      phase: 'Q3 2025 - Deep Investigation',
       status: 'planned',
       features: [
-        'Mobile App (React Native)',
-        'Offline-Mode mit Sync',
-        'Erweiterte Analytics & Reporting',
-        'Plugins & Extensions System'
+        '🕸️ Knowledge Graph: Visualisiere Verbindungen zwischen Personen & Firmen',
+        '🏢 North Data Integration: Automatische Handelsregister-Abfragen',
+        '✅ Live-Fact-Checking: In-Editor Verifikation mit Ampel-System',
+        '🔍 Investigative Queries: "Finde versteckte Verbindungen zwischen X und Y"'
       ]
     },
     {
-      phase: 'Future',
+      phase: 'Future - Innovation',
       status: 'idea',
       features: [
-        'AI-gestützte Faktencheck-Funktion',
-        'Automatische Quellenverifikation',
-        'Integrierte Bildbearbeitung',
-        'Voice-to-Text für Interviews'
+        '📱 Mobile App (React Native) mit Offline-Mode',
+        '🔗 Browser-Extension für Quick-Capture',
+        '📈 Advanced Analytics: Trend-Erkennung in deinem Archiv',
+        '🌐 Multi-Language Support (English, French)',
+        '🎨 Integrierte Bildbearbeitung & Media-Management'
       ]
     }
   ]
@@ -1105,8 +1106,20 @@ function RoadmapModal({ onClose }) {
           </div>
         ))}
 
-        <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '1.5rem', fontStyle: 'italic' }}>
-          💡 Haben Sie Feature-Wünsche? Erstellen Sie ein Issue auf GitHub!
+        <div style={{ marginTop: '2rem', padding: '1rem', background: '#F0F9FF', borderRadius: '8px', border: '1px solid #7FC1CC' }}>
+          <p style={{ color: '#1A1833', fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+            📋 Detaillierte Architektur-Spezifikation
+          </p>
+          <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+            Die vollständige technische Planung (APIs, Datenbank-Schemas, Docker-Architektur) finden Sie in:
+          </p>
+          <code style={{ background: '#fff', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', color: '#1A1833' }}>
+            docs/INVESTIGATIVE_SUITE_ARCHITECTURE.md
+          </code>
+        </div>
+
+        <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '1rem', fontStyle: 'italic' }}>
+          💡 Feature-Wünsche? Erstellen Sie ein Issue auf GitHub!
         </p>
       </div>
     </div>
