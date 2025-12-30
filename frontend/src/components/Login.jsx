@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import '../styles/Login.css'
 import '../styles/glassmorphism.css'
 
 function Login({ onLoginSuccess }) {
