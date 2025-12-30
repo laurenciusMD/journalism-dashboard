@@ -13,6 +13,8 @@ function App() {
   const [activeTab, setActiveTab] = useState('overview')
   const [showSettings, setShowSettings] = useState(false)
   const [sharedContent, setSharedContent] = useState('') // Content sharing between panels
+  const [showChangelog, setShowChangelog] = useState(false)
+  const [showRoadmap, setShowRoadmap] = useState(false)
 
   // Check auth status and setup requirements on mount
   useEffect(() => {
@@ -107,7 +109,12 @@ function App() {
             className="quill-logo"
           />
           <div className="header-right">
-            <div className="user-badge">
+            <div
+              className="user-badge"
+              onClick={() => window.open('http://localhost:8080/settings/user', '_blank')}
+              style={{ cursor: 'pointer' }}
+              title="NextCloud Profil öffnen"
+            >
               <span>👤</span>
               <span>{username}</span>
             </div>
@@ -145,36 +152,48 @@ function App() {
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            <span>Schreiben (Claude)</span>
+            <span>Recherche</span>
           </button>
           <button
             className={`nav-button ${activeTab === 'summarize' ? 'active' : ''}`}
             onClick={() => setActiveTab('summarize')}
           >
             <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
             </svg>
-            <span>Recherche (Gemini)</span>
+            <span>Zusammenfassen</span>
           </button>
           <button
             className={`nav-button ${activeTab === 'correct' ? 'active' : ''}`}
             onClick={() => setActiveTab('correct')}
           >
             <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+              <polyline points="20 6 9 17 4 12"/>
             </svg>
-            <span>Umformen (ChatGPT)</span>
+            <span>Korrigieren</span>
+          </button>
+          <button
+            className={`nav-button ${activeTab === 'gpts' ? 'active' : ''}`}
+            onClick={() => setActiveTab('gpts')}
+          >
+            <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>MDR GPTs</span>
           </button>
           <button
             className={`nav-button ${activeTab === 'files' ? 'active' : ''}`}
             onClick={() => setActiveTab('files')}
           >
             <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
             </svg>
-            <span>Dateien</span>
+            <span>NextCloud</span>
           </button>
         </nav>
       </div>
@@ -196,10 +215,13 @@ function App() {
         </p>
         <p className="footer-links">
           © 2024-2025 Quill by Laurencius ·
-          <a href="#changelog" className="footer-link">Changelog</a> ·
-          <a href="#roadmap" className="footer-link">Roadmap</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setShowChangelog(true); }} className="footer-link">Changelog</a> ·
+          <a href="#" onClick={(e) => { e.preventDefault(); setShowRoadmap(true); }} className="footer-link">Roadmap</a>
         </p>
       </footer>
+
+      {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
+      {showRoadmap && <RoadmapModal onClose={() => setShowRoadmap(false)} />}
     </div>
   )
 }
@@ -784,45 +806,308 @@ function SocialMediaPanel({ sharedContent, setSharedContent }) {
 
 // ===== NEXTCLOUD: Dateien =====
 function NextcloudPanel() {
+  const nextcloudFeatures = [
+    {
+      icon: '📁',
+      title: 'Dateien verwalten',
+      description: 'Laden Sie Dokumente hoch, organisieren Sie Ordner und greifen Sie von überall auf Ihre Dateien zu.',
+      url: 'http://localhost:8080/apps/files'
+    },
+    {
+      icon: '📅',
+      title: 'Kalender nutzen',
+      description: 'Verwalten Sie Termine, Deadlines und koordinieren Sie Events mit Ihrem Team.',
+      url: 'http://localhost:8080/apps/calendar'
+    },
+    {
+      icon: '👥',
+      title: 'Kontakte speichern',
+      description: 'Zentrale Verwaltung Ihrer Kontakte mit Sync-Funktion für alle Geräte.',
+      url: 'http://localhost:8080/apps/contacts'
+    },
+    {
+      icon: '📝',
+      title: 'Notizen erstellen',
+      description: 'Schnelle Notizen, Recherche-Snippets und Ideen direkt in der Cloud speichern.',
+      url: 'http://localhost:8080/apps/notes'
+    },
+    {
+      icon: '🖼️',
+      title: 'Fotos & Videos',
+      description: 'Medien-Archiv für Ihre journalistischen Inhalte mit Vorschau-Funktion.',
+      url: 'http://localhost:8080/apps/photos'
+    },
+    {
+      icon: '🔗',
+      title: 'Teilen & Kollaboration',
+      description: 'Teilen Sie Dateien sicher mit Kollegen und externen Partnern.',
+      url: 'http://localhost:8080/apps/files'
+    }
+  ]
+
   return (
     <div className="panel">
-      <h2>☁️ Nextcloud</h2>
+      <h2>☁️ NextCloud</h2>
       <p className="panel-description">Ihre selbst-gehostete Cloud für Dateien, Kalender und Kontakte</p>
 
-      <div className="nextcloud-info">
+      <div className="nextcloud-info" style={{ marginBottom: '2rem' }}>
         <div className="info-card">
-          <h3>🚀 Nextcloud läuft!</h3>
-          <p>Ihre Nextcloud-Instanz ist bereits konfiguriert und läuft.</p>
+          <h3>🚀 NextCloud läuft!</h3>
+          <p>Ihre NextCloud-Instanz ist konfiguriert. Nutzen Sie Ihre Registrierungs-Credentials für den Login.</p>
+          <a href="http://localhost:8080" target="_blank" rel="noopener noreferrer" className="nextcloud-btn" style={{ display: 'inline-block', marginTop: '1rem', padding: '0.75rem 1.5rem', background: '#7FC1CC', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
+            ☁️ NextCloud Dashboard öffnen →
+          </a>
+        </div>
+      </div>
 
-          <div className="nextcloud-access">
-            <p><strong>Zugriff:</strong></p>
-            <a href="http://localhost:8080" target="_blank" rel="noopener noreferrer" className="nextcloud-btn">
-              ☁️ Nextcloud öffnen →
-            </a>
+      <h3 style={{ marginBottom: '1.5rem', color: '#1A1833' }}>✨ Verfügbare Features</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+        {nextcloudFeatures.map((feature, index) => (
+          <div
+            key={index}
+            style={{
+              background: '#fff',
+              border: '2px solid #E8F4F8',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onClick={() => window.open(feature.url, '_blank')}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#7FC1CC'
+              e.currentTarget.style.transform = 'translateY(-4px)'
+              e.currentTarget.style.boxShadow = '0 8px 16px rgba(127, 193, 204, 0.2)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#E8F4F8'
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          >
+            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>{feature.icon}</div>
+            <h4 style={{ color: '#1A1833', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{feature.title}</h4>
+            <p style={{ color: '#666', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1rem' }}>{feature.description}</p>
+            <span style={{ color: '#7FC1CC', fontSize: '0.85rem', fontWeight: '600' }}>Öffnen →</span>
           </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-          <div className="nextcloud-credentials">
-            <p><strong>Login:</strong> Nutzen Sie Ihre Registrierungs-Credentials</p>
-            <ul>
-              <li>📁 Dateien verwalten</li>
-              <li>📅 Kalender nutzen</li>
-              <li>👥 Kontakte speichern</li>
-              <li>📝 Notizen erstellen</li>
+// ===== CHANGELOG MODAL =====
+function ChangelogModal({ onClose }) {
+  const changelog = [
+    {
+      version: '0.9.0',
+      date: '30.12.2024',
+      changes: [
+        'Rebranding zu "Quill" mit neuem Logo und Claim',
+        'Professionelles Logo: Lupe + Zahnrad + Federspitze',
+        'Claim: "Ihre Story. Unser Puls. Aus ihrer Feder."',
+        'File-Upload Funktion für AI-Panels (TXT, MD, PDF, DOC, DOCX)',
+        'Navigation unter Logo korrigiert',
+        'NextCloud Panel mit interaktiven Feature-Karten',
+        'Changelog & Roadmap hinzugefügt'
+      ]
+    },
+    {
+      version: '0.8.0',
+      date: '29.12.2024',
+      changes: [
+        'Nextcloud Auto-Repair für config.php implementiert',
+        'Cloud-Icon für NextCloud (statt Telefon)',
+        '[cite: 11] Label entfernt',
+        'Build-Optimierungen und CSS-Fixes'
+      ]
+    },
+    {
+      version: '0.6.0',
+      date: '28.12.2024',
+      changes: [
+        'Hypermodern UI mit Glassmorphism-Design',
+        'Dismissible Error-Benachrichtigungen',
+        'Heating History für Recherche-Dossiers',
+        'InfluxDB Integration'
+      ]
+    },
+    {
+      version: '0.5.2',
+      date: '27.12.2024',
+      changes: [
+        'Docker Hub automatisches Deployment',
+        'Code-Block-Fixes in UI',
+        'Executable Service Calls hinzugefügt',
+        'GitHub Actions CI/CD Setup'
+      ]
+    }
+  ]
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999
+    }} onClick={onClose}>
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '2rem',
+        maxWidth: '700px',
+        maxHeight: '80vh',
+        overflowY: 'auto',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+      }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ color: '#1A1833', margin: 0 }}>📋 Changelog</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#666' }}>✕</button>
+        </div>
+
+        {changelog.map((release, idx) => (
+          <div key={idx} style={{
+            marginBottom: '2rem',
+            paddingBottom: '1.5rem',
+            borderBottom: idx < changelog.length - 1 ? '1px solid #E8F4F8' : 'none'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+              <span style={{
+                background: '#7FC1CC',
+                color: 'white',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '6px',
+                fontWeight: '700',
+                fontSize: '0.9rem'
+              }}>v{release.version}</span>
+              <span style={{ color: '#666', fontSize: '0.9rem' }}>{release.date}</span>
+            </div>
+            <ul style={{ marginLeft: '1.25rem', color: '#333' }}>
+              {release.changes.map((change, i) => (
+                <li key={i} style={{ marginBottom: '0.5rem', lineHeight: '1.5' }}>{change}</li>
+              ))}
             </ul>
           </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ===== ROADMAP MODAL =====
+function RoadmapModal({ onClose }) {
+  const roadmap = [
+    {
+      phase: 'Q1 2025',
+      status: 'planned',
+      features: [
+        'Echte AI-API Integration (Claude, Gemini, ChatGPT)',
+        'Recherche-Dossiers: Vollständige CRUD-Operationen',
+        'Social Media: Automatisches Posten via APIs',
+        'Benutzer-Rollen & Permissions System'
+      ]
+    },
+    {
+      phase: 'Q2 2025',
+      status: 'planned',
+      features: [
+        'Multi-User Collaboration in Echtzeit',
+        'Erweiterte Datei-Verarbeitung (PDF-Textextraktion)',
+        'Integrierter Markdown-Editor',
+        'Export-Funktionen (PDF, DOCX, HTML)'
+      ]
+    },
+    {
+      phase: 'Q3 2025',
+      status: 'planned',
+      features: [
+        'Mobile App (React Native)',
+        'Offline-Mode mit Sync',
+        'Erweiterte Analytics & Reporting',
+        'Plugins & Extensions System'
+      ]
+    },
+    {
+      phase: 'Future',
+      status: 'idea',
+      features: [
+        'AI-gestützte Faktencheck-Funktion',
+        'Automatische Quellenverifikation',
+        'Integrierte Bildbearbeitung',
+        'Voice-to-Text für Interviews'
+      ]
+    }
+  ]
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999
+    }} onClick={onClose}>
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        padding: '2rem',
+        maxWidth: '700px',
+        maxHeight: '80vh',
+        overflowY: 'auto',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+      }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 style={{ color: '#1A1833', margin: 0 }}>🗺️ Roadmap</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer', color: '#666' }}>✕</button>
         </div>
 
-        <div className="nextcloud-features">
-          <h4>✨ Verfügbare Features:</h4>
-          <div className="feature-grid">
-            <div className="feature-item">📄 Dateien & Ordner</div>
-            <div className="feature-item">🖼️ Fotos & Videos</div>
-            <div className="feature-item">📅 Kalender</div>
-            <div className="feature-item">👤 Kontakte</div>
-            <div className="feature-item">📝 Notes</div>
-            <div className="feature-item">🔗 Teilen & Kollaboration</div>
+        {roadmap.map((phase, idx) => (
+          <div key={idx} style={{
+            marginBottom: '2rem',
+            paddingBottom: '1.5rem',
+            borderBottom: idx < roadmap.length - 1 ? '1px solid #E8F4F8' : 'none'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+              <span style={{
+                background: phase.status === 'planned' ? '#7FC1CC' : '#B8E5E5',
+                color: phase.status === 'planned' ? 'white' : '#1A1833',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '6px',
+                fontWeight: '700',
+                fontSize: '0.9rem'
+              }}>{phase.phase}</span>
+              <span style={{
+                background: phase.status === 'planned' ? '#FFF3CD' : '#E8F4F8',
+                color: phase.status === 'planned' ? '#856404' : '#666',
+                padding: '0.2rem 0.6rem',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                textTransform: 'uppercase'
+              }}>{phase.status === 'planned' ? 'Geplant' : 'Idee'}</span>
+            </div>
+            <ul style={{ marginLeft: '1.25rem', color: '#333' }}>
+              {phase.features.map((feature, i) => (
+                <li key={i} style={{ marginBottom: '0.5rem', lineHeight: '1.5' }}>{feature}</li>
+              ))}
+            </ul>
           </div>
-        </div>
+        ))}
+
+        <p style={{ color: '#666', fontSize: '0.85rem', marginTop: '1.5rem', fontStyle: 'italic' }}>
+          💡 Haben Sie Feature-Wünsche? Erstellen Sie ein Issue auf GitHub!
+        </p>
       </div>
     </div>
   )
