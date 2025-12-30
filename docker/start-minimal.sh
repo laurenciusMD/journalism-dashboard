@@ -1,8 +1,15 @@
 #!/bin/bash
 set -e
 
+# Read version from VERSION file or package.json
+VERSION="0.7.0"
+if [ -f "/app/VERSION" ]; then
+    VERSION=$(cat /app/VERSION)
+fi
+
 echo "=========================================="
-echo "📰 Journalism Dashboard + Nextcloud Startup"
+echo "📰 Journalism Dashboard v${VERSION}"
+echo "   + Nextcloud Integration"
 echo "=========================================="
 
 # ===== PostgreSQL Setup =====
