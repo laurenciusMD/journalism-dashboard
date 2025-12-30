@@ -2,7 +2,7 @@
 set -e
 
 # Read version from VERSION file or package.json
-VERSION="0.7.0"
+VERSION="0.8.0"
 if [ -f "/app/VERSION" ]; then
     VERSION=$(cat /app/VERSION)
 fi

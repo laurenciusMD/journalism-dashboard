@@ -191,7 +191,7 @@ function App() {
 
       <footer className="footer">
         <p>
-          <strong>Quill</strong> v0.7.0 | Powered by Claude, Gemini & ChatGPT
+          <strong>Quill</strong> v0.8.0 | Powered by Claude, Gemini & ChatGPT
         </p>
         <p className="footer-links">
           © 2024-2025 Laurencius ·

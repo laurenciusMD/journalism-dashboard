@@ -167,7 +167,7 @@ function Register({ onRegisterSuccess }) {
 
         <div className="login-footer">
           <p style={{ fontSize: '12px', color: 'var(--secondary-text)' }}>
-            Version 0.7.0 | © 2024-2025 Laurencius
+            Version 0.8.0 | © 2024-2025 Laurencius
           </p>
         </div>
       </div>
