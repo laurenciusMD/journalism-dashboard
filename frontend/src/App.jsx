@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './styles/App.css'
+import './styles/glassmorphism.css'
 import Login from './components/Login.jsx'
 import Register from './components/Register.jsx'
 import ResearchPanel from './components/ResearchPanel.jsx'
@@ -72,15 +73,14 @@ function App() {
 
   if (loading) {
     return (
-      <div className="dashboard loading-screen">
-        <div className="loading-spinner">
+      <div className="login-container">
+        <div className="login-box">
           <img
-            src="/images/logo-quill-icon-hell.svg"
+            src="/images/logo-quill.svg"
             alt="Quill Logo"
-            style={{ height: '60px', marginBottom: '1rem', animation: 'pulse 2s infinite' }}
+            className="login-logo"
           />
-          <h2>Quill</h2>
-          <p>Lädt...</p>
+          <p style={{ color: 'var(--secondary-text)' }}>Lädt...</p>
         </div>
       </div>
     )
@@ -98,75 +98,73 @@ function App() {
 
   return (
     <div className="dashboard">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="header-title">
-            <img
-              src="/images/logo-quill-header-hell.svg"
-              alt="Quill Logo"
-              style={{ height: '40px', marginRight: '1rem' }}
-            />
-            <p className="subtitle">Ihre zentrale Arbeitsumgebung für journalistische Arbeit</p>
-          </div>
-          <div className="header-actions">
-            <span className="username-display">👤 {username}</span>
-            <input type="text" className="search-box" placeholder="🔍 Suchen..." />
-            <button className="settings-btn" onClick={() => setShowSettings(!showSettings)}>
-              ⚙️ Einstellungen
+      <div className="glass-panel" style={{ margin: '20px', marginBottom: '0' }}>
+        <header className="header-top">
+          <img
+            src="/images/logo-quill.svg"
+            alt="Quill Logo"
+            className="quill-logo"
+          />
+          <div className="header-right">
+            <div className="user-badge">
+              <span>👤</span>
+              <span>{username}</span>
+            </div>
+            <div className="search-bar">
+              <span className="search-icon">🔍</span>
+              <input type="text" className="search-input" placeholder="Suchen..." />
+            </div>
+            <button className="header-button" onClick={() => setShowSettings(!showSettings)}>
+              <span>⚙️</span>
+              <span>Einstellungen</span>
             </button>
-            <button className="logout-btn" onClick={handleLogout}>
-              🚪 Abmelden
+            <button className="header-button" onClick={handleLogout}>
+              <span>🚪</span>
+              <span>Logout</span>
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <nav className="dashboard-nav">
-        <button
-          className={activeTab === 'overview' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('overview')}
-        >
-          🏠 Übersicht
-        </button>
-        <button
-          className={activeTab === 'research' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('research')}
-        >
-          📁 Recherche
-        </button>
-        <button
-          className={activeTab === 'summarize' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('summarize')}
-        >
-          📊 Zusammenfassen (Claude)
-        </button>
-        <button
-          className={activeTab === 'correct' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('correct')}
-        >
-          ✅ Korrigieren (Gemini)
-        </button>
-        <button
-          className={activeTab === 'gpts' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('gpts')}
-        >
-          🤖 MDR GPTs
-        </button>
-        <button
-          className={activeTab === 'social' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('social')}
-        >
-          📱 Social Media
-        </button>
-        <button
-          className={activeTab === 'files' ? 'nav-btn active' : 'nav-btn'}
-          onClick={() => setActiveTab('files')}
-        >
-          ☁️ Nextcloud
-        </button>
-      </nav>
+        <nav className="nav-bar">
+          <button
+            className={`nav-button ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            <span className="nav-icon">🏠</span>
+            <span>Übersicht</span>
+          </button>
+          <button
+            className={`nav-button ${activeTab === 'research' ? 'active' : ''}`}
+            onClick={() => setActiveTab('research')}
+          >
+            <span className="nav-icon">✍️</span>
+            <span>Schreiben (Claude)</span>
+          </button>
+          <button
+            className={`nav-button ${activeTab === 'summarize' ? 'active' : ''}`}
+            onClick={() => setActiveTab('summarize')}
+          >
+            <span className="nav-icon">🔍</span>
+            <span>Recherche (Gemini)</span>
+          </button>
+          <button
+            className={`nav-button ${activeTab === 'correct' ? 'active' : ''}`}
+            onClick={() => setActiveTab('correct')}
+          >
+            <span className="nav-icon">✅</span>
+            <span>Umformen (ChatGPT)</span>
+          </button>
+          <button
+            className={`nav-button ${activeTab === 'files' ? 'active' : ''}`}
+            onClick={() => setActiveTab('files')}
+          >
+            <span className="nav-icon">📁</span>
+            <span>Dateien</span>
+          </button>
+        </nav>
+      </div>
 
-      <main className="dashboard-content">
+      <main className="content-area">
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
         {!showSettings && activeTab === 'overview' && <OverviewPanel setActiveTab={setActiveTab} />}
         {!showSettings && activeTab === 'research' && <ResearchPanel />}
@@ -177,14 +175,14 @@ function App() {
         {!showSettings && activeTab === 'files' && <NextcloudPanel />}
       </main>
 
-      <footer className="dashboard-footer">
+      <footer className="footer">
         <p>
           <strong>Quill</strong> v0.7.0 | Powered by Claude, Gemini & ChatGPT
         </p>
-        <p className="footer-info">
+        <p className="footer-links">
           © 2024-2025 Laurencius ·
-          <a href="#changelog" style={{ marginLeft: '0.5rem' }}>Changelog</a> ·
-          <a href="#roadmap" style={{ marginLeft: '0.5rem' }}>Roadmap</a>
+          <a href="#changelog" className="footer-link">Changelog</a> ·
+          <a href="#roadmap" className="footer-link">Roadmap</a>
         </p>
       </footer>
     </div>
@@ -274,50 +272,134 @@ function SettingsPanel({ onClose }) {
 
 function OverviewPanel({ setActiveTab }) {
   return (
-    <div className="panel">
-      <h2>📰 Journalismus-Workflow</h2>
-      <p className="panel-description">Ihr KI-gestützter Workflow für professionellen Journalismus</p>
+    <div>
+      <h2 className="section-title">
+        <span className="section-icon">📁</span>
+        <span>Journalismus-Workflow</span>
+        <span className="cite-label">[cite: 11]</span>
+      </h2>
 
-      <div className="cards-grid">
-        <div className="feature-card card-research" onClick={() => setActiveTab('research')}>
-          <div className="card-icon">📁</div>
-          <h3>Recherche-Dossiers</h3>
-          <p>Investigative Recherchen verwalten: Personen, Beziehungen und Beweise strukturiert erfassen.</p>
-          <button className="card-btn">Öffnen →</button>
+      <div className="workflow-grid">
+        <div className="workflow-card">
+          <div className="card-header">
+            <div className="card-icon">
+              <svg viewBox="0 0 48 48">
+                <circle cx="18" cy="18" r="10" strokeWidth="2"/>
+                <line x1="25" y1="25" x2="35" y2="35" strokeWidth="2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="card-title">Recherche-Dossiers</h3>
+              <p className="card-description">Investigative Recherchen verwalten: Personen, Beziehungen und Beweise strukturiert erfassen.</p>
+            </div>
+          </div>
+          <button className="button-primary" onClick={() => setActiveTab('research')}>
+            Öffnen <span className="button-arrow">→</span>
+          </button>
         </div>
-        <div className="feature-card card-purple" onClick={() => setActiveTab('summarize')}>
-          <div className="card-icon">📊</div>
-          <h3>Zusammenfassen (Claude)</h3>
-          <p>Lange Texte, Interviews oder Artikel auf die wichtigsten Punkte reduzieren.</p>
-          <button className="card-btn">Öffnen →</button>
+
+        <div className="workflow-card">
+          <div className="card-header">
+            <div className="card-icon">
+              <svg viewBox="0 0 48 48">
+                <rect x="8" y="8" width="32" height="32" rx="2" strokeWidth="2"/>
+                <line x1="16" y1="18" x2="32" y2="18" strokeWidth="2"/>
+                <line x1="16" y1="24" x2="32" y2="24" strokeWidth="2"/>
+                <line x1="16" y1="30" x2="24" y2="30" strokeWidth="2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="card-title">Zusammenfassen (Claude)</h3>
+              <p className="card-description">Lange Texte, Interviews oder Artikel auf die wichtigsten Punkte reduzieren.</p>
+            </div>
+          </div>
+          <button className="button-primary" onClick={() => setActiveTab('summarize')}>
+            Öffnen <span className="button-arrow">→</span>
+          </button>
         </div>
-        <div className="feature-card card-blue" onClick={() => setActiveTab('correct')}>
-          <div className="card-icon">✅</div>
-          <h3>Korrigieren (Gemini)</h3>
-          <p>Rechtschreibung, Grammatik und Stil professionell prüfen und verbessern.</p>
-          <button className="card-btn">Öffnen →</button>
+
+        <div className="workflow-card">
+          <div className="card-header">
+            <div className="card-icon">
+              <svg viewBox="0 0 48 48">
+                <path d="M 16 20 L 22 28 L 32 14" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="24" cy="24" r="16" strokeWidth="2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="card-title">Korrigieren (Gemini)</h3>
+              <p className="card-description">Rechtschreibung, Grammatik und Stil professionell prüfen und verbessern.</p>
+            </div>
+          </div>
+          <button className="button-primary" onClick={() => setActiveTab('correct')}>
+            Öffnen <span className="button-arrow">→</span>
+          </button>
         </div>
-        <div className="feature-card card-green" onClick={() => setActiveTab('gpts')}>
-          <div className="card-icon">🤖</div>
-          <h3>MDR GPTs</h3>
-          <p>Spezialisierte MDR-Assistenten: MINA + Sachsen-Anhalt-Texte.</p>
-          <button className="card-btn">Öffnen →</button>
+
+        <div className="workflow-card">
+          <div className="card-header">
+            <div className="card-icon">
+              <svg viewBox="0 0 48 48">
+                <circle cx="18" cy="18" r="6" strokeWidth="2"/>
+                <circle cx="30" cy="18" r="6" strokeWidth="2"/>
+                <rect x="12" y="28" width="24" height="12" rx="2" strokeWidth="2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="card-title">MDR GPTs</h3>
+              <p className="card-description">Spezialisierte MDR-Assistenten: MINA + Sachsen-Anhalt-Texte.</p>
+            </div>
+          </div>
+          <button className="button-primary" onClick={() => setActiveTab('gpts')}>
+            Öffnen <span className="button-arrow">→</span>
+          </button>
         </div>
-        <div className="feature-card card-orange" onClick={() => setActiveTab('social')}>
-          <div className="card-icon">📱</div>
-          <h3>Social Media</h3>
-          <p>Automatisch Tweets, Bluesky-Posts und LinkedIn-Beiträge generieren.</p>
-          <button className="card-btn">Öffnen →</button>
+
+        <div className="workflow-card">
+          <div className="card-header">
+            <div className="card-icon">
+              <svg viewBox="0 0 48 48">
+                <rect x="8" y="10" width="32" height="28" rx="4" strokeWidth="2"/>
+                <circle cx="16" cy="20" r="3" strokeWidth="2"/>
+                <circle cx="32" cy="20" r="3" strokeWidth="2"/>
+                <line x1="8" y1="28" x2="40" y2="28" strokeWidth="2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="card-title">Social Media</h3>
+              <p className="card-description">Automatisch Tweets, Bluesky-Posts und LinkedIn-Beiträge generieren.</p>
+            </div>
+          </div>
+          <button className="button-primary" onClick={() => setActiveTab('social')}>
+            Öffnen <span className="button-arrow">→</span>
+          </button>
+        </div>
+
+        <div className="workflow-card">
+          <div className="card-header">
+            <div className="card-icon">
+              <svg viewBox="0 0 48 48">
+                <path d="M 24 8 L 24 18 M 24 30 L 24 40 M 12 24 L 18 24 M 30 24 L 36 24" strokeWidth="2" strokeLinecap="round"/>
+                <circle cx="24" cy="24" r="18" strokeWidth="2"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className="card-title">NextCloud</h3>
+              <p className="card-description">Greifen Sie auf Google Drive und Ihren privaten Cloud-Speicher zu.</p>
+            </div>
+          </div>
+          <button className="button-primary" onClick={() => setActiveTab('files')}>
+            Öffnen <span className="button-arrow">→</span>
+          </button>
         </div>
       </div>
 
-      <div className="workflow-info">
-        <h3>💡 Workflow-Tipp</h3>
-        <p>Texte können zwischen Tools weitergegeben werden:</p>
-        <div className="workflow-steps">
-          <span>1. Text korrigieren (Gemini)</span> →
-          <span>2. Zusammenfassen (Claude)</span> →
-          <span>3. Social Media generieren</span>
+      <div className="tip-box">
+        <div className="tip-title">Workflow-Tipp</div>
+        <div className="tip-content">
+          Texte können zwischen Tools weitergegeben werden:
+          <br />
+          1. Text korrigieren (Gemini) → 2. Zusammenfassen (Claude) → 3. Social Media generieren
         </div>
       </div>
     </div>
