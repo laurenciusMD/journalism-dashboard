@@ -168,6 +168,9 @@ clone_repository() {
         read -p "Do you want to remove it and clone fresh? (y/N): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
+            # Change to home directory first to avoid deleting the directory we're in
+            cd "$HOME"
+            print_info "Removing existing directory..."
             rm -rf "$INSTALL_DIR"
         else
             print_info "Using existing directory..."
