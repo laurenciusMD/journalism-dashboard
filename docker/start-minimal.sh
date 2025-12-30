@@ -86,18 +86,27 @@ else
     echo "✅ PostgreSQL already running"
 fi
 
+# Check if Nextcloud data directory has existing data
+NEXTCLOUD_HAS_DATA=false
+if [ -d "$NEXTCLOUD_DATA" ] && [ "$(ls -A $NEXTCLOUD_DATA 2>/dev/null)" ]; then
+    NEXTCLOUD_HAS_DATA=true
+    echo "📦 Nextcloud data directory contains existing data"
+fi
+
 # Check if Nextcloud is properly installed
 NEXTCLOUD_INSTALLED=false
 if [ -f "/var/www/nextcloud/config/config.php" ]; then
     if grep -q "'installed' => true" /var/www/nextcloud/config/config.php; then
         NEXTCLOUD_INSTALLED=true
+        echo "✅ Nextcloud already configured and installed"
     fi
 fi
 
-if [ "$NEXTCLOUD_INSTALLED" = false ]; then
-    echo "🔧 Installing Nextcloud with PostgreSQL..."
+# Only install if no data exists AND not installed
+if [ "$NEXTCLOUD_HAS_DATA" = false ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
+    echo "🔧 Installing fresh Nextcloud with PostgreSQL..."
 
-    # Remove incomplete config if it exists
+    # Remove any incomplete config
     rm -f /var/www/nextcloud/config/config.php
     rm -f /var/www/nextcloud/config/CAN_INSTALL
 
@@ -130,8 +139,12 @@ if [ "$NEXTCLOUD_INSTALLED" = false ]; then
     echo "   Admin user: $NEXTCLOUD_ADMIN"
     echo "   Admin password: $NEXTCLOUD_ADMIN_PASSWORD"
     echo "   Database: PostgreSQL"
+elif [ "$NEXTCLOUD_HAS_DATA" = true ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
+    echo "⚠️  Nextcloud data exists but not properly configured"
+    echo "   Skipping installation to preserve existing data"
+    echo "   Please check Nextcloud manually at http://localhost:8080"
 else
-    echo "✅ Nextcloud already configured"
+    echo "✅ Using existing Nextcloud installation"
 fi
 
 # Stop temporary PostgreSQL (supervisord will restart it)
