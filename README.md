@@ -1,52 +1,68 @@
-# Journalism Dashboard
+# Quill - Investigative Journalism Intelligence Platform
 
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-laurencius-blue?logo=docker)](https://hub.docker.com/u/laurencius)
 [![Build and Push](https://github.com/laurenciusMD/journalism-dashboard/actions/workflows/docker-hub-deploy.yml/badge.svg)](https://github.com/laurenciusMD/journalism-dashboard/actions/workflows/docker-hub-deploy.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-0.9.0-green)](https://github.com/laurenciusMD/journalism-dashboard/releases)
 
-Ein zentrales, KI-gestütztes Dashboard für journalistische Arbeit - Ihre persönliche Startseite für Content-Erstellung, Recherche und Informationsmanagement.
+> **Ihre Story. Unser Puls. Aus ihrer Feder.**
 
-## Übersicht
+Ein KI-gestütztes Investigativ-Tool für professionellen Journalismus - von Content-Erstellung über Deep-Research bis zur Faktenprüfung.
 
-Das Journalism Dashboard vereint alle wichtigen Werkzeuge für moderne journalistische Arbeit in einer einzigen, übersichtlichen Oberfläche. Es integriert verschiedene KI-Modelle und Cloud-Speicher-Lösungen, um einen nahtlosen Workflow zu ermöglichen.
+---
 
-## Kernfunktionen
+## 🎯 Was ist Quill?
 
-### KI-Integration
-- **Claude AI** - Artikel schreiben, Texte überarbeiten, kreative Unterstützung
-- **Google Gemini** - Komplexe Recherchen, Datenanalyse, Faktenchecks
-- **ChatGPT/GPTs** - Content-Umformungen, Übersetzungen, spezielle GPT-Tools
+Quill ist mehr als ein CMS - es ist eine **Investigative Intelligence Platform**, die Journalisten mit modernsten AI-Tools, automatischer Recherche und Knowledge-Graph-Technologie ausstattet.
 
-### Cloud-Integration
-- **Nextcloud** - Integrierter selbst-gehosteter Cloud-Speicher (automatisch installiert)
-- **Google Drive** - Zugriff auf externe Dokumente und Ressourcen
-- **WebDAV** - Generische WebDAV-Unterstützung
-- Lokaler Dateizugriff für Offline-Arbeit
+**Aktueller Stand:** v0.9.0 - Foundation Phase
+**Roadmap:** Transformation zur Full-Stack Investigativ-Suite (siehe [ROADMAP.md](docs/ROADMAP.md))
 
-### Workflow-Features
-- Browser-Startseite für sofortigen Zugriff
-- Zentrale Aufgabenverwaltung
-- Artikel-Editor mit KI-Unterstützung
-- Recherche-Tools mit Multi-Quellen-Suche
-- Sichere Datenverwaltung
+---
 
-## Technologie-Stack
+## ✨ Kernfunktionen (v0.9.0)
 
-### Frontend
-- **React** - UI-Framework
-- **Vite** - Build-Tool und Dev-Server
-- **React Router** - Navigation
-- **Zustand** - State Management
-- **TanStack Query** - API-Anfragen und Caching
+### 🤖 KI-Integration
+- **Claude AI** - Zusammenfassen, Texte überarbeiten, kreative Unterstützung
+- **Google Gemini** - Korrektur, Datenanalyse, Fact-Checking
+- **ChatGPT/MDR GPTs** - Spezialisierte GPTs für MDR-Content
 
-### Backend
-- **Node.js** - Runtime
-- **Express** - Web-Framework
-- **AI SDKs** - Anthropic, Google Gemini, OpenAI
-- **Google APIs** - Drive-Integration
-- **WebDAV** - Private Cloud-Verbindung
+### ☁️ Cloud-Integration
+- **Nextcloud** - Self-hosted Cloud mit Dateien, Kalender, Kontakten, Notizen
+- **Auto-Repair** - Nextcloud config.php wird automatisch repariert
+- **Direktzugriff** - Click-to-Open für alle Nextcloud-Apps
 
-## Installation
+### 🎨 Moderne UI
+- **Glassmorphism-Design** - Helles, modernes Interface
+- **Responsive** - Funktioniert auf Desktop & Tablet
+- **Changelog & Roadmap** - Transparente Entwicklung
+- **File-Upload** - Drag & Drop für TXT, MD, PDF, DOC, DOCX in AI-Panels
+
+---
+
+## 🚀 Kommende Features (2025)
+
+Quill entwickelt sich zur vollwertigen **Investigative Suite**. Geplant sind:
+
+### Q1 2025 - Foundation
+- 📰 **Portfolio-Tracker** - Automatisches MDR-Scraping + Chat mit eigenem Archiv (RAG)
+- 📡 **News-Radar** - Google News Aggregation + Nextcloud-Integration
+- 🤖 **Modulare KI-Steuerung** - Wähle dein eigenes Modell pro Feature (BYOM)
+
+### Q2 2025 - Intelligence
+- 🎙️ **Interview-Vault** - Audio-Upload + automatische Transkription (Whisper)
+- 💬 **Smart Quotes** - Click-to-Copy mit Timecodes aus Interviews
+- 📊 **Erweiterte RAG** - Multi-Source Search (Archiv + Web)
+
+### Q3 2025 - Deep Investigation
+- 🕸️ **Knowledge Graph** - Visualisiere Verbindungen zwischen Personen & Firmen
+- 🏢 **North Data Integration** - Automatische Handelsregister-Abfragen
+- ✅ **Live-Fact-Checking** - In-Editor Verifikation mit Ampel-System
+- 🔍 **Investigative Queries** - "Finde versteckte Verbindungen zwischen X und Y"
+
+**Vollständige Planung:** Siehe [INVESTIGATIVE_SUITE_ARCHITECTURE.md](docs/INVESTIGATIVE_SUITE_ARCHITECTURE.md) & [ROADMAP.md](docs/ROADMAP.md)
+
+---
 
 ### Voraussetzungen
 - Node.js 18+ und npm
