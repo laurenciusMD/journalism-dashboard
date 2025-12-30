@@ -2,7 +2,7 @@ import OpenAIAdapter from './adapters/openai.js'
 import AnthropicAdapter from './adapters/anthropic.js'
 import GoogleAdapter from './adapters/google.js'
 import { decrypt } from './encryption.js'
-import { query } from '../postgresService.js'
+import postgresService from '../postgresService.js'
 
 /**
  * AI Router Service
@@ -24,7 +24,7 @@ export class AIRouter {
    * @returns {Promise<object|null>} Configuration or null if not set
    */
   async getUserConfig(userId, featureName) {
-    const result = await query(
+    const result = await postgresService.query(
       `SELECT * FROM ai_model_configs
        WHERE user_id = $1 AND feature_name = $2 AND is_active = true`,
       [userId, featureName]
