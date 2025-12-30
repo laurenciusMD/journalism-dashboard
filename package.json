@@ -1,7 +1,7 @@
 {
-  "name": "journalism-dashboard",
-  "version": "0.1.0",
-  "description": "Zentrales journalistisches Dashboard für Artikel-Erstellung, Recherche und Content-Management mit AI-Integration",
+  "name": "quill",
+  "version": "0.9.0",
+  "description": "Quill - Journalism Research Platform: Ihre Story. Unser Puls. Aus ihrer Feder.",
   "private": true,
   "workspaces": [
     "frontend",

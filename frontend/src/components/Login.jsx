@@ -45,8 +45,12 @@ function Login({ onLoginSuccess }) {
     <div className="login-container">
       <div className="login-box">
         <div className="login-header">
-          <h1>📰 Journalism Dashboard</h1>
-          <p className="login-subtitle">Ihre zentrale Arbeitsumgebung</p>
+          <img
+            src="/images/logo-quill-with-claim.svg"
+            alt="Quill Logo"
+            className="login-logo"
+            style={{ width: '100%', maxWidth: '500px', margin: '0 auto 1rem' }}
+          />
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -112,7 +116,7 @@ function Login({ onLoginSuccess }) {
               Docker-Umgebungsvariablen konfiguriert sind.
             </small>
           </p>
-          <p className="login-version">Version 0.2.0</p>
+          <p className="login-version">Version 0.9.0 | © 2024-2025 Quill</p>
         </div>
       </div>
 

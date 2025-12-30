@@ -77,9 +77,10 @@ function App() {
       <div className="login-container">
         <div className="login-box">
           <img
-            src="/images/logo-quill.svg"
+            src="/images/logo-quill-with-claim.svg"
             alt="Quill Logo"
             className="login-logo"
+            style={{ width: '100%', maxWidth: '500px', margin: '0 auto 1rem' }}
           />
           <p style={{ color: 'var(--secondary-text)' }}>Lädt...</p>
         </div>
@@ -102,7 +103,7 @@ function App() {
       <div className="glass-panel" style={{ margin: '20px', marginBottom: '0' }}>
         <header className="header-top">
           <img
-            src="/images/logo-quill.svg"
+            src="/images/logo-quill-header.svg"
             alt="Quill Logo"
             className="quill-logo"
           />
@@ -192,10 +193,10 @@ function App() {
 
       <footer className="footer">
         <p>
-          <strong>Quill</strong> v0.8.0 | Powered by Claude, Gemini & ChatGPT
+          <strong>Quill</strong> v0.9.0 | Ihre Story. Unser Puls. Aus ihrer Feder.
         </p>
         <p className="footer-links">
-          © 2024-2025 Laurencius ·
+          © 2024-2025 Quill by Laurencius ·
           <a href="#changelog" className="footer-link">Changelog</a> ·
           <a href="#roadmap" className="footer-link">Roadmap</a>
         </p>

@@ -76,7 +76,12 @@ function Register({ onRegisterSuccess }) {
 
       <div className="register-box">
         <div className="register-header">
-          <h1>📰 Journalism Dashboard</h1>
+          <img
+            src="/images/logo-quill-with-claim.svg"
+            alt="Quill Logo"
+            className="register-logo"
+            style={{ width: '100%', maxWidth: '500px', margin: '0 auto 1rem' }}
+          />
           <h2>Ersteinrichtung</h2>
           <p className="register-subtitle">
             Erstellen Sie Ihren Account für Dashboard & Nextcloud
