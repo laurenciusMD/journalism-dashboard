@@ -21,7 +21,7 @@ services:
       - NEXTCLOUD_INITIAL_ADMIN_USER=${NEXTCLOUD_INITIAL_ADMIN_USER:-admin}
       - NEXTCLOUD_INITIAL_ADMIN_PASSWORD=${NEXTCLOUD_INITIAL_ADMIN_PASSWORD:-admin123}
       # Nextcloud Connection (Internal - runs inside this container)
-      - NEXTCLOUD_URL=http://localhost:80
+      - NEXTCLOUD_URL=http://localhost:8080
       # AI Services
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}

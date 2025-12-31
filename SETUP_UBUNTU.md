@@ -338,7 +338,7 @@ Falls Nextcloud "Zugriff verweigert" anzeigt:
 
 ```bash
 # Trusted Domain hinzufügen
-docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/html/occ config:system:set trusted_domains 2 --value='192.168.1.100'"  # Ihre IP
+docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/nextcloud/occ config:system:set trusted_domains 2 --value='192.168.1.100'"  # Ihre IP
 ```
 
 ---
@@ -411,8 +411,8 @@ Das System erstellt automatisch folgende Nextcloud-Gruppen:
 
 Via Command Line (empfohlen):
 ```bash
-docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/html/occ user:add USERNAME"
-docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/html/occ group:adduser admin USERNAME"
+docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/nextcloud/occ user:add USERNAME"
+docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/nextcloud/occ group:adduser admin USERNAME"
 ```
 
 **Wichtig:** Bei der Admin-Gruppe kann kein Manager über die Web-UI gesetzt werden (Nextcloud-Einschränkung).
@@ -425,7 +425,7 @@ Passwörter werden **nur** in Nextcloud verwaltet:
 # Via Web-UI: Nextcloud → Benutzer → User auswählen → Passwort ändern
 
 # Via CLI:
-docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/html/occ user:resetpassword USERNAME"
+docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/nextcloud/occ user:resetpassword USERNAME"
 ```
 
 ---
