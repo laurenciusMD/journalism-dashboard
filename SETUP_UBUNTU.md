@@ -386,6 +386,16 @@ Für den Produktiv-Einsatz sollten Sie:
 
 ## 👥 Benutzerverwaltung
 
+### 🎯 Wichtig: Nextcloud ist die einzige Quelle der Wahrheit
+
+**Alle Benutzerverwaltung erfolgt ausschließlich in Nextcloud!**
+
+- ✅ User in Nextcloud erstellen → Kann sich am Dashboard anmelden
+- ✅ Passwort in Nextcloud ändern → Automatisch für Dashboard geändert
+- ✅ User in Nextcloud deaktivieren → Automatisch am Dashboard gesperrt
+- ❌ Es gibt KEINE separaten Dashboard-Credentials
+- ❌ Die `.env`-Datei wird NICHT für Login-Verwaltung verwendet
+
 ### Standard-Benutzergruppen
 
 Das System erstellt automatisch folgende Nextcloud-Gruppen:
@@ -397,10 +407,11 @@ Das System erstellt automatisch folgende Nextcloud-Gruppen:
 
 **Für normale Benutzer (Journalisten):**
 
-1. Nextcloud → Benutzer → Neues Konto
+1. Nextcloud (http://[server-ip]:8080) → Benutzer → Neues Konto
 2. Gruppe: **journalists** wählen
 3. Manager-Feld: **leer lassen**
 4. Speichern
+5. ✅ Fertig! User kann sich sofort am Dashboard anmelden
 
 **Für Administratoren:**
 
@@ -411,6 +422,17 @@ docker exec -u www-data nextcloud php occ group:adduser admin USERNAME
 ```
 
 **Wichtig:** Bei der Admin-Gruppe kann kein Manager über die Web-UI gesetzt werden (Nextcloud-Einschränkung).
+
+### Passwort ändern
+
+Passwörter werden **nur** in Nextcloud verwaltet:
+
+```bash
+# Via Web-UI: Nextcloud → Benutzer → User auswählen → Passwort ändern
+
+# Via CLI:
+docker exec -it -u www-data nextcloud php occ user:resetpassword USERNAME
+```
 
 ## 🐛 Troubleshooting
 
