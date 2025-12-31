@@ -4,7 +4,6 @@ import '../styles/glassmorphism.css'
 function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [useNextcloud, setUseNextcloud] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -22,8 +21,7 @@ function Login({ onLoginSuccess }) {
         credentials: 'include',
         body: JSON.stringify({
           username,
-          password,
-          useNextcloud
+          password
         })
       })
 
@@ -88,22 +86,14 @@ function Login({ onLoginSuccess }) {
             disabled={loading}
           />
 
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px',
+          <div style={{
+            fontSize: '13px',
             color: 'var(--secondary-text)',
-            cursor: 'pointer'
+            marginTop: '8px',
+            textAlign: 'center'
           }}>
-            <input
-              type="checkbox"
-              checked={useNextcloud}
-              onChange={(e) => setUseNextcloud(e.target.checked)}
-              disabled={loading}
-            />
-            <span>Mit Nextcloud-Anmeldung</span>
-          </label>
+            💡 Verwenden Sie Ihre Nextcloud-Zugangsdaten
+          </div>
 
           <button
             type="submit"

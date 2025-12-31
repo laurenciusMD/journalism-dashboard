@@ -72,8 +72,9 @@ fi
 
 # ===== Nextcloud Setup =====
 NEXTCLOUD_DATA="/var/www/nextcloud/data"
-NEXTCLOUD_ADMIN="${NEXTCLOUD_ADMIN_USER:-admin}"
-NEXTCLOUD_ADMIN_PASSWORD="${NEXTCLOUD_ADMIN_PASSWORD:-admin123}"
+# Use DASHBOARD credentials for Nextcloud admin (unified login)
+NEXTCLOUD_ADMIN="${DASHBOARD_USERNAME:-admin}"
+NEXTCLOUD_ADMIN_PASSWORD="${DASHBOARD_PASSWORD:-admin123}"
 
 # Note: Apache port 8080 is already configured in the Dockerfile
 
