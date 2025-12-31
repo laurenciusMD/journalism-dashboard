@@ -236,8 +236,6 @@ configure_environment() {
     print_info "Generating secure secrets..."
     SESSION_SECRET=$(openssl rand -base64 32)
     ENCRYPTION_KEY=$(openssl rand -hex 32)
-    NEXTCLOUD_DB_PASSWORD=$(openssl rand -base64 24)
-    NEXTCLOUD_DB_ROOT_PASSWORD=$(openssl rand -base64 24)
     JOURNALISM_DB_PASSWORD=$(openssl rand -base64 24)
 
     # Update .env file
@@ -248,8 +246,6 @@ configure_environment() {
     sed -i "s|^NEXTCLOUD_INITIAL_ADMIN_PASSWORD=.*|NEXTCLOUD_INITIAL_ADMIN_PASSWORD=$NEXTCLOUD_ADMIN_PASSWORD|" .env
     sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=$SESSION_SECRET|" .env
     sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$ENCRYPTION_KEY|" .env
-    sed -i "s|^NEXTCLOUD_DB_PASSWORD=.*|NEXTCLOUD_DB_PASSWORD=$NEXTCLOUD_DB_PASSWORD|" .env
-    sed -i "s|^NEXTCLOUD_DB_ROOT_PASSWORD=.*|NEXTCLOUD_DB_ROOT_PASSWORD=$NEXTCLOUD_DB_ROOT_PASSWORD|" .env
 
     # Add JOURNALISM_DB_PASSWORD if not present
     if ! grep -q "^JOURNALISM_DB_PASSWORD=" .env; then
