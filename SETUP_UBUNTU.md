@@ -384,6 +384,34 @@ Für den Produktiv-Einsatz sollten Sie:
 
 ---
 
+## 👥 Benutzerverwaltung
+
+### Standard-Benutzergruppen
+
+Das System erstellt automatisch folgende Nextcloud-Gruppen:
+
+- **admin** - Volle Administratorrechte (Systemkonfiguration, alle Features)
+- **journalists** - Standard-Benutzer (Dateien, Kalender, Notizen - KEINE Systemeinstellungen)
+
+### Neue Benutzer anlegen
+
+**Für normale Benutzer (Journalisten):**
+
+1. Nextcloud → Benutzer → Neues Konto
+2. Gruppe: **journalists** wählen
+3. Manager-Feld: **leer lassen**
+4. Speichern
+
+**Für Administratoren:**
+
+Via Command Line (empfohlen):
+```bash
+docker exec -it -u www-data nextcloud php occ user:add USERNAME
+docker exec -u www-data nextcloud php occ group:adduser admin USERNAME
+```
+
+**Wichtig:** Bei der Admin-Gruppe kann kein Manager über die Web-UI gesetzt werden (Nextcloud-Einschränkung).
+
 ## 🐛 Troubleshooting
 
 ### Container starten nicht
