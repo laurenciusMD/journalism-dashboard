@@ -434,6 +434,63 @@ Passwörter werden **nur** in Nextcloud verwaltet:
 docker exec -it -u www-data nextcloud php occ user:resetpassword USERNAME
 ```
 
+---
+
+## 🔄 Updates & Datenschutz
+
+### Bestehende Nextcloud-Installation ist geschützt
+
+**Wichtig:** Ihre Nextcloud-Daten und Benutzer sind SICHER!
+
+✅ **Bei Git Updates:**
+- Nextcloud-Daten bleiben erhalten (Docker Volumes)
+- Bestehende User werden NICHT überschrieben
+- Passwörter bleiben unverändert
+- `.env`-Änderungen werden IGNORIERT wenn Nextcloud bereits installiert ist
+
+✅ **Bei Container-Neustart:**
+- Nextcloud-Installation wird NICHT neu durchgeführt
+- Alle Daten bleiben erhalten
+- `NEXTCLOUD_INITIAL_ADMIN_*` wird nur beim allerersten Start verwendet
+
+✅ **Daten-Persistenz:**
+- Alle Nextcloud-Daten in Docker Volume `nextcloud-data`
+- Nextcloud-Config in Docker Volume `nextcloud-config`
+- Nextcloud-Apps in Docker Volume `nextcloud-apps`
+- Bleiben erhalten bei: `docker compose down`, Git Updates, Container-Rebuilds
+
+### System aktualisieren
+
+```bash
+cd ~/journalism-dashboard
+
+# 1. Neuesten Code holen
+git pull
+
+# 2. Container neu bauen und starten
+docker compose build --no-cache journalism-dashboard
+docker compose up -d
+
+# ✅ Ihre Nextcloud-Daten bleiben unberührt!
+```
+
+### Was wird beim Update NICHT überschrieben:
+
+- ❌ Nextcloud-User (bleiben alle erhalten)
+- ❌ Nextcloud-Passwörter (bleiben unverändert)
+- ❌ Nextcloud-Dateien (bleiben erhalten)
+- ❌ Nextcloud-Konfiguration (bleibt erhalten)
+- ❌ Datenbanken (bleiben erhalten)
+
+### Was wird beim Update aktualisiert:
+
+- ✅ Dashboard-Code (neue Features)
+- ✅ Backend-Code (Bug-Fixes)
+- ✅ Frontend-Code (UI-Updates)
+- ✅ System-Bibliotheken (wenn Docker Image neu gebaut wird)
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Container starten nicht

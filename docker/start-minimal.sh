@@ -105,8 +105,10 @@ if [ -f "/var/www/nextcloud/config/config.php" ]; then
 fi
 
 # Only install if no data exists AND not installed
+# This protects existing Nextcloud installations from being overwritten
 if [ "$NEXTCLOUD_HAS_DATA" = false ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
     echo "🔧 Installing fresh Nextcloud with PostgreSQL..."
+    echo "   Using credentials: $NEXTCLOUD_ADMIN (from NEXTCLOUD_INITIAL_ADMIN_* env vars)"
 
     # Remove any incomplete config
     rm -f /var/www/nextcloud/config/config.php
@@ -190,6 +192,8 @@ EOF
     echo "   Your existing data and database are preserved"
 else
     echo "✅ Using existing Nextcloud installation"
+    echo "   ⚠️  NEXTCLOUD_INITIAL_ADMIN_* env vars are IGNORED (installation already exists)"
+    echo "   💡 User management: Use Nextcloud UI or 'occ' commands"
 fi
 
 # ===== Nextcloud Post-Installation Configuration =====
