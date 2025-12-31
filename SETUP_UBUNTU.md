@@ -113,17 +113,16 @@ Bearbeiten Sie die `.env`-Datei mit folgenden **REQUIRED** Werten:
 
 ```env
 # === AUTHENTICATION (REQUIRED) ===
-DASHBOARD_USERNAME=ihr_benutzername
-DASHBOARD_PASSWORD=ihr_sicheres_passwort
+# Nextcloud Admin-Account (wird nur beim ersten Start erstellt)
+NEXTCLOUD_INITIAL_ADMIN_USER=ihr_benutzername
+NEXTCLOUD_INITIAL_ADMIN_PASSWORD=ihr_sicheres_passwort
 SESSION_SECRET=hier_einen_zufaelligen_32_zeichen_string
 
 # === ENCRYPTION (REQUIRED) ===
 # Generieren mit: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ENCRYPTION_KEY=38165c882c6eca3ed81ba1394d84111bef2dbfd26eebeb4db65d0a7e3b47bc6d
 
-# === DATABASE PASSWORDS ===
-NEXTCLOUD_DB_PASSWORD=nextcloud_secure_password_hier_aendern
-NEXTCLOUD_DB_ROOT_PASSWORD=secure_root_password_hier_aendern
+# === DATABASE PASSWORD ===
 JOURNALISM_DB_PASSWORD=journalism_password_hier_aendern
 
 # === AI SERVICES (Optional - können später hinzugefügt werden) ===
@@ -170,11 +169,9 @@ docker compose ps
 ```
 
 Alle Services sollten "running" und "healthy" sein:
-- `journalism-dashboard`
-- `nextcloud`
-- `nextcloud-db`
-- `journalism-postgres`
-- `journalism-redis`
+- `journalism-dashboard` (enthält: Dashboard-Backend, Frontend & Nextcloud)
+- `journalism-postgres` (PostgreSQL für Journalism DB + Nextcloud DB)
+- `journalism-redis` (Job Queue)
 
 #### Logs ansehen
 
@@ -182,11 +179,11 @@ Alle Services sollten "running" und "healthy" sein:
 # Alle Services
 docker compose logs -f
 
-# Nur Dashboard
+# Hauptcontainer (Dashboard + Nextcloud)
 docker compose logs -f journalism-dashboard
 
-# Nur Nextcloud
-docker compose logs -f nextcloud
+# PostgreSQL
+docker compose logs -f postgres
 ```
 
 ### Schritt 8: Auf die Services zugreifen
@@ -194,10 +191,11 @@ docker compose logs -f nextcloud
 Öffnen Sie einen Browser und navigieren Sie zu:
 
 - **📰 Dashboard:** http://localhost:3001
-  - Login mit `DASHBOARD_USERNAME` / `DASHBOARD_PASSWORD`
+  - Login mit `NEXTCLOUD_INITIAL_ADMIN_USER` / `NEXTCLOUD_INITIAL_ADMIN_PASSWORD`
 
 - **☁️ Nextcloud:** http://localhost:8080
   - Login mit **denselben Credentials**!
+  - Läuft im journalism-dashboard Container (effiziente Single-Container-Architektur)
 
 - **🔗 API:** http://localhost:3001/api/health
 
@@ -339,12 +337,8 @@ Von anderen Geräten im Netzwerk:
 Falls Nextcloud "Zugriff verweigert" anzeigt:
 
 ```bash
-# Container betreten
-docker exec -it nextcloud bash
-
 # Trusted Domain hinzufügen
-php occ config:system:set trusted_domains 2 --value='192.168.1.100'  # Ihre IP
-exit
+docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/nextcloud/occ config:system:set trusted_domains 2 --value='192.168.1.100'"  # Ihre IP
 ```
 
 ---
@@ -384,6 +378,112 @@ Für den Produktiv-Einsatz sollten Sie:
 
 ---
 
+## 👥 Benutzerverwaltung
+
+### 🎯 Wichtig: Nextcloud ist die einzige Quelle der Wahrheit
+
+**Alle Benutzerverwaltung erfolgt ausschließlich in Nextcloud!**
+
+- ✅ User in Nextcloud erstellen → Kann sich am Dashboard anmelden
+- ✅ Passwort in Nextcloud ändern → Automatisch für Dashboard geändert
+- ✅ User in Nextcloud deaktivieren → Automatisch am Dashboard gesperrt
+- ❌ Es gibt KEINE separaten Dashboard-Credentials
+- ❌ Die `.env`-Datei wird NICHT für Login-Verwaltung verwendet
+
+### Standard-Benutzergruppen
+
+Das System erstellt automatisch folgende Nextcloud-Gruppen:
+
+- **admin** - Volle Administratorrechte (Systemkonfiguration, alle Features)
+- **journalists** - Standard-Benutzer (Dateien, Kalender, Notizen - KEINE Systemeinstellungen)
+
+### Neue Benutzer anlegen
+
+**Für normale Benutzer (Journalisten):**
+
+1. Nextcloud (http://[server-ip]:8080) → Benutzer → Neues Konto
+2. Gruppe: **journalists** wählen
+3. Manager-Feld: **leer lassen**
+4. Speichern
+5. ✅ Fertig! User kann sich sofort am Dashboard anmelden
+
+**Für Administratoren:**
+
+Via Command Line (empfohlen):
+```bash
+docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/nextcloud/occ user:add USERNAME"
+docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/nextcloud/occ group:adduser admin USERNAME"
+```
+
+**Wichtig:** Bei der Admin-Gruppe kann kein Manager über die Web-UI gesetzt werden (Nextcloud-Einschränkung).
+
+### Passwort ändern
+
+Passwörter werden **nur** in Nextcloud verwaltet:
+
+```bash
+# Via Web-UI: Nextcloud → Benutzer → User auswählen → Passwort ändern
+
+# Via CLI:
+docker compose exec journalism-dashboard su -s /bin/bash www-data -c "php /var/www/nextcloud/occ user:resetpassword USERNAME"
+```
+
+---
+
+## 🔄 Updates & Datenschutz
+
+### Bestehende Nextcloud-Installation ist geschützt
+
+**Wichtig:** Ihre Nextcloud-Daten und Benutzer sind SICHER!
+
+✅ **Bei Git Updates:**
+- Nextcloud-Daten bleiben erhalten (Docker Volumes)
+- Bestehende User werden NICHT überschrieben
+- Passwörter bleiben unverändert
+- `.env`-Änderungen werden IGNORIERT wenn Nextcloud bereits installiert ist
+
+✅ **Bei Container-Neustart:**
+- Nextcloud-Installation wird NICHT neu durchgeführt
+- Alle Daten bleiben erhalten
+- `NEXTCLOUD_INITIAL_ADMIN_*` wird nur beim allerersten Start verwendet
+
+✅ **Daten-Persistenz:**
+- Alle Nextcloud-Daten in Docker Volume `nextcloud-data`
+- Nextcloud-Datenbank in Docker Volume `postgres-data` (PostgreSQL)
+- Bleiben erhalten bei: `docker compose down`, Git Updates, Container-Rebuilds
+
+### System aktualisieren
+
+```bash
+cd ~/journalism-dashboard
+
+# 1. Neuesten Code holen
+git pull
+
+# 2. Container neu bauen und starten
+docker compose build --no-cache journalism-dashboard
+docker compose up -d
+
+# ✅ Ihre Nextcloud-Daten bleiben unberührt!
+```
+
+### Was wird beim Update NICHT überschrieben:
+
+- ❌ Nextcloud-User (bleiben alle erhalten)
+- ❌ Nextcloud-Passwörter (bleiben unverändert)
+- ❌ Nextcloud-Dateien (bleiben erhalten)
+- ❌ Nextcloud-Konfiguration (bleibt erhalten)
+- ❌ Datenbanken (bleiben erhalten)
+
+### Was wird beim Update aktualisiert:
+
+- ✅ Dashboard-Code (neue Features)
+- ✅ Backend-Code (Bug-Fixes)
+- ✅ Frontend-Code (UI-Updates)
+- ✅ System-Bibliotheken (wenn Docker Image neu gebaut wird)
+
+---
+
 ## 🐛 Troubleshooting
 
 ### Container starten nicht
@@ -392,8 +492,7 @@ Für den Produktiv-Einsatz sollten Sie:
 # Logs ansehen
 docker compose logs
 
-# Einzelnen Container prüfen
-docker compose logs nextcloud
+# Hauptcontainer prüfen (enthält Dashboard + Nextcloud)
 docker compose logs journalism-dashboard
 ```
 

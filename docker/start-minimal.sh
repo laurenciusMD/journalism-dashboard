@@ -72,8 +72,10 @@ fi
 
 # ===== Nextcloud Setup =====
 NEXTCLOUD_DATA="/var/www/nextcloud/data"
-NEXTCLOUD_ADMIN="${NEXTCLOUD_ADMIN_USER:-admin}"
-NEXTCLOUD_ADMIN_PASSWORD="${NEXTCLOUD_ADMIN_PASSWORD:-admin123}"
+# Initial admin account (only used during first setup)
+# After setup, all user management happens in Nextcloud
+NEXTCLOUD_ADMIN="${NEXTCLOUD_INITIAL_ADMIN_USER:-admin}"
+NEXTCLOUD_ADMIN_PASSWORD="${NEXTCLOUD_INITIAL_ADMIN_PASSWORD:-admin123}"
 
 # Note: Apache port 8080 is already configured in the Dockerfile
 
@@ -103,8 +105,10 @@ if [ -f "/var/www/nextcloud/config/config.php" ]; then
 fi
 
 # Only install if no data exists AND not installed
+# This protects existing Nextcloud installations from being overwritten
 if [ "$NEXTCLOUD_HAS_DATA" = false ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
     echo "🔧 Installing fresh Nextcloud with PostgreSQL..."
+    echo "   Using credentials: $NEXTCLOUD_ADMIN (from NEXTCLOUD_INITIAL_ADMIN_* env vars)"
 
     # Remove any incomplete config
     rm -f /var/www/nextcloud/config/config.php
@@ -188,6 +192,32 @@ EOF
     echo "   Your existing data and database are preserved"
 else
     echo "✅ Using existing Nextcloud installation"
+    echo "   ⚠️  NEXTCLOUD_INITIAL_ADMIN_* env vars are IGNORED (installation already exists)"
+    echo "   💡 User management: Use Nextcloud UI or 'occ' commands"
+fi
+
+# ===== Nextcloud Post-Installation Configuration =====
+if [ "$NEXTCLOUD_INSTALLED" = true ] || [ "$NEXTCLOUD_HAS_DATA" = true ]; then
+    echo "🔧 Configuring Nextcloud optimizations..."
+    cd /var/www/nextcloud
+
+    # Add missing database indices (improves performance)
+    su -s /bin/bash www-data -c "php occ db:add-missing-indices" 2>/dev/null || echo "   DB indices already added or skipped"
+
+    # Set default phone region (Germany - adjust as needed)
+    su -s /bin/bash www-data -c "php occ config:system:set default_phone_region --value='DE'" 2>/dev/null || true
+
+    # Set maintenance window (2 AM - low traffic time)
+    su -s /bin/bash www-data -c "php occ config:system:set maintenance_window_start --type=integer --value=2" 2>/dev/null || true
+
+    # Create 'journalists' group if it doesn't exist
+    if ! su -s /bin/bash www-data -c "php occ group:list" | grep -q "journalists"; then
+        echo "👥 Creating 'journalists' user group..."
+        su -s /bin/bash www-data -c "php occ group:add journalists" 2>/dev/null || true
+        echo "   ✅ Journalists group created - use this for non-admin users"
+    fi
+
+    echo "✅ Nextcloud configuration optimized!"
 fi
 
 # Stop temporary PostgreSQL (supervisord will restart it)

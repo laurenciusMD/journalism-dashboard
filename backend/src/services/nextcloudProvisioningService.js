@@ -138,28 +138,34 @@ export class NextcloudProvisioningService {
 
   /**
    * Verify user credentials against Nextcloud
+   * Uses WebDAV (more reliable than OCS API)
    * @param {string} username
    * @param {string} password
    * @returns {Promise<boolean>}
    */
   async verifyCredentials(username, password) {
     try {
-      const response = await axios.get(
-        `${this.nextcloudUrl}/ocs/v1.php/cloud/user`,
-        {
-          headers: {
-            'OCS-APIRequest': 'true'
-          },
-          auth: {
-            username: username,
-            password: password
-          },
-          timeout: 3000
-        }
-      );
+      // Use WebDAV endpoint for authentication (more reliable than OCS API)
+      // This is the same endpoint Nextcloud clients use
+      const response = await axios({
+        method: 'PROPFIND',
+        url: `${this.nextcloudUrl}/remote.php/dav/files/${username}/`,
+        auth: {
+          username: username,
+          password: password
+        },
+        headers: {
+          'Depth': '0'
+        },
+        timeout: 5000,
+        validateStatus: (status) => status === 207 || status === 401
+      });
 
-      return response.data?.ocs?.meta?.statuscode === 100;
+      // 207 Multi-Status = successful authentication and valid WebDAV response
+      // 401 = authentication failed
+      return response.status === 207;
     } catch (error) {
+      console.warn('Nextcloud credential verification failed:', error.message);
       return false;
     }
   }

@@ -85,6 +85,8 @@ chmod +x setup.sh
 
 **Detaillierte Anleitung:** Siehe [SETUP_UBUNTU.md](SETUP_UBUNTU.md)
 
+**⚠️ Updates sind sicher:** Ihre Nextcloud-Daten und Benutzer bleiben bei Git-Updates erhalten! Die `.env`-Credentials werden nur beim allerersten Setup verwendet.
+
 ---
 
 ### Voraussetzungen (für manuelle Installation)

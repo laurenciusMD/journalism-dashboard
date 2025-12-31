@@ -168,6 +168,9 @@ clone_repository() {
         read -p "Do you want to remove it and clone fresh? (y/N): " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
+            # Change to home directory first to avoid deleting the directory we're in
+            cd "$HOME"
+            print_info "Removing existing directory..."
             rm -rf "$INSTALL_DIR"
         else
             print_info "Using existing directory..."
@@ -204,24 +207,25 @@ configure_environment() {
     # Copy example file
     cp .env.example .env
 
-    print_info "Please provide the following information:"
+    print_info "Creating initial Nextcloud admin account:"
+    print_info "(All user management will happen in Nextcloud after setup)"
     echo
 
-    # Dashboard Username
-    read -p "Dashboard Username [admin]: " DASHBOARD_USERNAME
-    DASHBOARD_USERNAME=${DASHBOARD_USERNAME:-admin}
+    # Nextcloud Admin Username
+    read -p "Nextcloud Admin Username [admin]: " NEXTCLOUD_ADMIN_USER
+    NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER:-admin}
 
-    # Dashboard Password
+    # Nextcloud Admin Password
     while true; do
-        read -sp "Dashboard Password (min. 8 characters): " DASHBOARD_PASSWORD
+        read -sp "Nextcloud Admin Password (min. 8 characters): " NEXTCLOUD_ADMIN_PASSWORD
         echo
-        if [ ${#DASHBOARD_PASSWORD} -lt 8 ]; then
+        if [ ${#NEXTCLOUD_ADMIN_PASSWORD} -lt 8 ]; then
             print_error "Password must be at least 8 characters long."
             continue
         fi
-        read -sp "Confirm Password: " DASHBOARD_PASSWORD_CONFIRM
+        read -sp "Confirm Password: " NEXTCLOUD_ADMIN_PASSWORD_CONFIRM
         echo
-        if [ "$DASHBOARD_PASSWORD" != "$DASHBOARD_PASSWORD_CONFIRM" ]; then
+        if [ "$NEXTCLOUD_ADMIN_PASSWORD" != "$NEXTCLOUD_ADMIN_PASSWORD_CONFIRM" ]; then
             print_error "Passwords do not match. Try again."
             continue
         fi
@@ -232,26 +236,22 @@ configure_environment() {
     print_info "Generating secure secrets..."
     SESSION_SECRET=$(openssl rand -base64 32)
     ENCRYPTION_KEY=$(openssl rand -hex 32)
-    NEXTCLOUD_DB_PASSWORD=$(openssl rand -base64 24)
-    NEXTCLOUD_DB_ROOT_PASSWORD=$(openssl rand -base64 24)
     JOURNALISM_DB_PASSWORD=$(openssl rand -base64 24)
 
     # Update .env file
     print_info "Writing configuration to .env..."
 
-    # Using sed to replace values in .env
-    sed -i "s/^DASHBOARD_USERNAME=.*/DASHBOARD_USERNAME=$DASHBOARD_USERNAME/" .env
-    sed -i "s/^DASHBOARD_PASSWORD=.*/DASHBOARD_PASSWORD=$DASHBOARD_PASSWORD/" .env
-    sed -i "s/^SESSION_SECRET=.*/SESSION_SECRET=$SESSION_SECRET/" .env
-    sed -i "s/^ENCRYPTION_KEY=.*/ENCRYPTION_KEY=$ENCRYPTION_KEY/" .env
-    sed -i "s/^NEXTCLOUD_DB_PASSWORD=.*/NEXTCLOUD_DB_PASSWORD=$NEXTCLOUD_DB_PASSWORD/" .env
-    sed -i "s/^NEXTCLOUD_DB_ROOT_PASSWORD=.*/NEXTCLOUD_DB_ROOT_PASSWORD=$NEXTCLOUD_DB_ROOT_PASSWORD/" .env
+    # Using sed with | delimiter to safely handle special characters in passwords/secrets
+    sed -i "s|^NEXTCLOUD_INITIAL_ADMIN_USER=.*|NEXTCLOUD_INITIAL_ADMIN_USER=$NEXTCLOUD_ADMIN_USER|" .env
+    sed -i "s|^NEXTCLOUD_INITIAL_ADMIN_PASSWORD=.*|NEXTCLOUD_INITIAL_ADMIN_PASSWORD=$NEXTCLOUD_ADMIN_PASSWORD|" .env
+    sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=$SESSION_SECRET|" .env
+    sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$ENCRYPTION_KEY|" .env
 
     # Add JOURNALISM_DB_PASSWORD if not present
     if ! grep -q "^JOURNALISM_DB_PASSWORD=" .env; then
         echo "JOURNALISM_DB_PASSWORD=$JOURNALISM_DB_PASSWORD" >> .env
     else
-        sed -i "s/^JOURNALISM_DB_PASSWORD=.*/JOURNALISM_DB_PASSWORD=$JOURNALISM_DB_PASSWORD/" .env
+        sed -i "s|^JOURNALISM_DB_PASSWORD=.*|JOURNALISM_DB_PASSWORD=$JOURNALISM_DB_PASSWORD|" .env
     fi
 
     print_success "Environment configured successfully"
@@ -346,10 +346,12 @@ show_access_info() {
     echo -e "  📰 Dashboard:  ${GREEN}http://$LOCAL_IP:3001${NC}"
     echo -e "  ☁️  Nextcloud:  ${GREEN}http://$LOCAL_IP:8080${NC}"
     echo
-    echo -e "${BLUE}Login Credentials:${NC}"
-    echo -e "  Username: ${GREEN}$DASHBOARD_USERNAME${NC}"
+    echo -e "${BLUE}Nextcloud Login (works for Dashboard too):${NC}"
+    echo -e "  Username: ${GREEN}$NEXTCLOUD_ADMIN_USER${NC}"
     echo -e "  Password: ${GREEN}[your password]${NC}"
-    echo -e "  ${YELLOW}(Same credentials for both Dashboard and Nextcloud!)${NC}"
+    echo
+    echo -e "${YELLOW}💡 All user management happens in Nextcloud!${NC}"
+    echo -e "${YELLOW}   Add new users in Nextcloud → They can login to the Dashboard${NC}"
     echo
     echo -e "${BLUE}Useful Commands:${NC}"
     echo -e "  ${YELLOW}cd $INSTALL_DIR${NC}"
