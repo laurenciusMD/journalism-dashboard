@@ -4,7 +4,7 @@
  */
 
 import express from 'express'
-import { query } from '../services/postgresService.js'
+import postgresService from '../services/postgresService.js'
 import { encrypt, decrypt } from '../services/ai/encryption.js'
 import { aiRouter } from '../services/ai/router.js'
 
@@ -47,7 +47,7 @@ router.get('/config', requireAuth, async (req, res) => {
   try {
     const userId = req.session.userId
 
-    const result = await query(
+    const result = await postgresService.query(
       `SELECT id, feature_name, provider, model_name, settings, is_active, created_at, updated_at
        FROM ai_model_configs
        WHERE user_id = $1
@@ -77,7 +77,7 @@ router.get('/config/:feature', requireAuth, async (req, res) => {
     const userId = req.session.userId
     const featureName = req.params.feature
 
-    const result = await query(
+    const result = await postgresService.query(
       `SELECT id, feature_name, provider, model_name, settings, is_active, created_at, updated_at
        FROM ai_model_configs
        WHERE user_id = $1 AND feature_name = $2`,
@@ -164,7 +164,7 @@ router.put('/config/:feature', requireAuth, async (req, res) => {
     }
 
     // Upsert configuration
-    const result = await query(
+    const result = await postgresService.query(
       `INSERT INTO ai_model_configs (user_id, feature_name, provider, model_name, api_key_encrypted, settings)
        VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (user_id, feature_name)
@@ -201,7 +201,7 @@ router.delete('/config/:feature', requireAuth, async (req, res) => {
     const userId = req.session.userId
     const featureName = req.params.feature
 
-    await query(
+    await postgresService.query(
       `DELETE FROM ai_model_configs
        WHERE user_id = $1 AND feature_name = $2`,
       [userId, featureName]
@@ -297,7 +297,7 @@ router.get('/usage', requireAuth, async (req, res) => {
 
     queryText += ' GROUP BY feature_name, provider, model_name ORDER BY total_tokens DESC'
 
-    const result = await query(queryText, params)
+    const result = await postgresService.query(queryText, params)
 
     res.json({
       success: true,
