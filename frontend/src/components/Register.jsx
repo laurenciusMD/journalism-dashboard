@@ -4,9 +4,10 @@ import '../styles/glassmorphism.css'
 
 function Register({ onRegisterSuccess }) {
   const [username, setUsername] = useState('')
+  const [displayName, setDisplayName] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -15,13 +16,23 @@ function Register({ onRegisterSuccess }) {
     setError('')
 
     // Validation
-    if (!username || !password) {
-      setError('Benutzername und Passwort sind erforderlich')
+    if (!username || !displayName || !email || !password) {
+      setError('Alle Felder sind erforderlich')
       return
     }
 
     if (username.length < 3) {
       setError('Benutzername muss mindestens 3 Zeichen lang sein')
+      return
+    }
+
+    if (displayName.length < 2) {
+      setError('Anzeigename muss mindestens 2 Zeichen lang sein')
+      return
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein')
       return
     }
 
@@ -46,8 +57,9 @@ function Register({ onRegisterSuccess }) {
         credentials: 'include',
         body: JSON.stringify({
           username,
-          password,
-          email: email || null
+          displayName,
+          email,
+          password
         })
       })
 
@@ -79,7 +91,7 @@ function Register({ onRegisterSuccess }) {
           />
           <h2>Ersteinrichtung</h2>
           <p className="register-subtitle">
-            Erstellen Sie Ihren Account für Dashboard & Nextcloud
+            Erstellen Sie Ihren Admin-Account
           </p>
         </div>
 
@@ -111,12 +123,24 @@ function Register({ onRegisterSuccess }) {
           />
 
           <input
+            type="text"
+            className="login-input"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Anzeigename (z.B. Max Mustermann)"
+            autoComplete="name"
+            required
+            minLength={2}
+          />
+
+          <input
             type="email"
             className="login-input"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="E-Mail (optional)"
+            placeholder="E-Mail"
             autoComplete="email"
+            required
           />
 
           <input
@@ -159,12 +183,9 @@ function Register({ onRegisterSuccess }) {
             color: 'var(--secondary-text)',
             lineHeight: '1.6'
           }}>
-            <p><strong>ℹ️ Single Sign-On:</strong></p>
-            <p>Ihr Account wird automatisch in beiden Systemen erstellt:</p>
-            <ul style={{ marginLeft: '20px', marginTop: '8px' }}>
-              <li>📰 Dashboard (dieser Service)</li>
-              <li>☁️ Nextcloud (Cloud-Speicher)</li>
-            </ul>
+            <p><strong>ℹ️ Hinweis:</strong></p>
+            <p>Der erste registrierte Benutzer wird automatisch zum <strong>Admin</strong>.</p>
+            <p style={{ marginTop: '8px' }}>Weitere Benutzer erhalten die Rolle <strong>Autor</strong>.</p>
           </div>
         </form>
 
