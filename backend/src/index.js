@@ -112,17 +112,9 @@ app.post('/api/auth/register', async (req, res) => {
 
     console.log(`✓ User ${username} created in Nextcloud`);
 
-    // Get or create user in PostgreSQL (for AI configs, etc.)
-    const userResult = await postgresService.query(
-      'SELECT get_or_create_user($1::TEXT) as user_id',
-      [username]
-    );
-    const userId = userResult.rows[0].user_id;
-
     // Auto-login after registration
     req.session.authenticated = true;
     req.session.username = username;
-    req.session.userId = userId;
 
     res.json({
       success: true,
@@ -156,18 +148,10 @@ app.post('/api/auth/login', async (req, res) => {
     const isValid = await nextcloudProvisioning.verifyCredentials(username, password);
 
     if (isValid) {
-      // Get or create user in PostgreSQL (for AI configs, etc.)
-      const userResult = await postgresService.query(
-        'SELECT get_or_create_user($1::TEXT) as user_id',
-        [username]
-      );
-      const userId = userResult.rows[0].user_id;
-
       req.session.authenticated = true;
       req.session.username = username;
-      req.session.userId = userId;
 
-      console.log(`✓ User ${username} (ID: ${userId}) logged in via Nextcloud`);
+      console.log(`✓ User ${username} logged in via Nextcloud`);
 
       res.json({
         success: true,
@@ -204,8 +188,7 @@ app.get('/api/auth/status', (req, res) => {
   if (req.session && req.session.authenticated) {
     res.json({
       authenticated: true,
-      username: req.session.username,
-      userId: req.session.userId
+      username: req.session.username
     });
   } else {
     res.json({

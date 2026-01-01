@@ -4,7 +4,7 @@
 -- ===== AI Model Configs Table =====
 CREATE TABLE IF NOT EXISTS ai_model_configs (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL, -- External reference to SQLite users table
+  username TEXT NOT NULL, -- Nextcloud username (single source of truth)
   feature_name TEXT NOT NULL, -- 'transcription', 'summarize', 'correct', 'gpts', 'embedding', 'fact_check'
   provider TEXT NOT NULL, -- 'openai', 'anthropic', 'google'
   model_name TEXT NOT NULL, -- 'gpt-4', 'claude-3-opus-20240229', 'gemini-pro'
@@ -13,11 +13,11 @@ CREATE TABLE IF NOT EXISTS ai_model_configs (
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user_id, feature_name)
+  UNIQUE(username, feature_name)
 );
 
 -- ===== Indexes =====
-CREATE INDEX idx_ai_configs_user ON ai_model_configs(user_id);
+CREATE INDEX idx_ai_configs_username ON ai_model_configs(username);
 CREATE INDEX idx_ai_configs_feature ON ai_model_configs(feature_name);
 CREATE INDEX idx_ai_configs_active ON ai_model_configs(is_active);
 
@@ -41,7 +41,7 @@ COMMENT ON COLUMN ai_model_configs.settings IS 'Model-specific settings (tempera
 -- ===== Usage Tracking Table (optional) =====
 CREATE TABLE IF NOT EXISTS ai_usage_logs (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL, -- External reference to SQLite users table
+  username TEXT NOT NULL, -- Nextcloud username
   feature_name TEXT NOT NULL,
   provider TEXT NOT NULL,
   model_name TEXT NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS ai_usage_logs (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ai_logs_user ON ai_usage_logs(user_id);
+CREATE INDEX idx_ai_logs_username ON ai_usage_logs(username);
 CREATE INDEX idx_ai_logs_created ON ai_usage_logs(created_at DESC);
 CREATE INDEX idx_ai_logs_feature ON ai_usage_logs(feature_name);
 
@@ -78,11 +78,11 @@ CREATE TRIGGER update_ai_configs_updated_at
 -- ===== Sample Data (Development Only) =====
 -- Uncomment for development environment
 
--- INSERT INTO ai_model_configs (user_id, feature_name, provider, model_name, settings)
+-- INSERT INTO ai_model_configs (username, feature_name, provider, model_name, settings)
 -- VALUES
---   (1, 'summarize', 'openai', 'gpt-4', '{"temperature": 0.7, "max_tokens": 2000}'),
---   (1, 'correct', 'google', 'gemini-pro', '{"temperature": 0.3, "max_tokens": 1500}'),
---   (1, 'transcription', 'openai', 'whisper-1', '{"language": "de"}');
+--   ('admin', 'summarize', 'openai', 'gpt-4', '{"temperature": 0.7, "max_tokens": 2000}'),
+--   ('admin', 'correct', 'google', 'gemini-pro', '{"temperature": 0.3, "max_tokens": 1500}'),
+--   ('admin', 'transcription', 'openai', 'whisper-1', '{"language": "de"}');
 
 -- ===== Rollback SQL =====
 -- DROP TRIGGER IF EXISTS update_ai_configs_updated_at ON ai_model_configs;
