@@ -71,7 +71,9 @@ else
 fi
 
 # ===== Nextcloud Setup =====
-NEXTCLOUD_DATA="/var/www/nextcloud/data"
+# CRITICAL: This MUST match the volume mount in docker-compose.yml!
+# Volume mount: nextcloud-data:/var/www/html/data
+NEXTCLOUD_DATA="/var/www/html/data"
 # Initial admin account (only used during first setup)
 # After setup, all user management happens in Nextcloud
 NEXTCLOUD_ADMIN="${NEXTCLOUD_INITIAL_ADMIN_USER:-admin}"
@@ -104,9 +106,21 @@ if [ -f "/var/www/nextcloud/config/config.php" ]; then
     fi
 fi
 
-# Only install if no data exists AND not installed
+# CRITICAL DATA PROTECTION: Check if Nextcloud database has existing users
+# This prevents accidental data loss from re-running maintenance:install
+NEXTCLOUD_DB_HAS_USERS=false
+USER_COUNT=$(su - postgres -c "psql -d $NEXTCLOUD_DB -t -c \"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='oc_users';\"" 2>/dev/null | tr -d ' ' || echo "0")
+if [ "$USER_COUNT" = "1" ]; then
+    NC_USER_COUNT=$(su - postgres -c "psql -d $NEXTCLOUD_DB -t -c \"SELECT COUNT(*) FROM oc_users;\"" 2>/dev/null | tr -d ' ' || echo "0")
+    if [ "$NC_USER_COUNT" -gt 0 ]; then
+        NEXTCLOUD_DB_HAS_USERS=true
+        echo "🔒 PROTECTED: Nextcloud database contains $NC_USER_COUNT user(s) - will NOT reinstall"
+    fi
+fi
+
+# Only install if no data exists AND not installed AND no users in database
 # This protects existing Nextcloud installations from being overwritten
-if [ "$NEXTCLOUD_HAS_DATA" = false ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
+if [ "$NEXTCLOUD_HAS_DATA" = false ] && [ "$NEXTCLOUD_INSTALLED" = false ] && [ "$NEXTCLOUD_DB_HAS_USERS" = false ]; then
     echo "🔧 Installing fresh Nextcloud with PostgreSQL..."
     echo "   Using credentials: $NEXTCLOUD_ADMIN (from NEXTCLOUD_INITIAL_ADMIN_* env vars)"
 
@@ -143,6 +157,57 @@ if [ "$NEXTCLOUD_HAS_DATA" = false ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
     echo "   Admin user: $NEXTCLOUD_ADMIN"
     echo "   Admin password: $NEXTCLOUD_ADMIN_PASSWORD"
     echo "   Database: PostgreSQL"
+elif [ "$NEXTCLOUD_DB_HAS_USERS" = true ]; then
+    # Database has users - NEVER reinstall, only repair config if needed
+    echo "🔒 PROTECTION ACTIVE: Database contains users - preserving all data"
+
+    if [ "$NEXTCLOUD_INSTALLED" = false ]; then
+        echo "🔧 Repairing Nextcloud config (data preserved)..."
+
+        # Get existing instanceid if it exists, otherwise generate new one
+        INSTANCE_ID="oc$(openssl rand -hex 6)"
+        if [ -f "/var/www/nextcloud/config/config.php" ]; then
+            EXISTING_ID=$(grep -oP "(?<='instanceid' => ')[^']*" /var/www/nextcloud/config/config.php 2>/dev/null || echo "")
+            if [ ! -z "$EXISTING_ID" ]; then
+                INSTANCE_ID="$EXISTING_ID"
+                echo "   Using existing instanceid: $INSTANCE_ID"
+            fi
+        fi
+
+        # Create proper config.php
+        cat > /var/www/nextcloud/config/config.php <<EOF
+<?php
+\$CONFIG = array (
+  'instanceid' => '$INSTANCE_ID',
+  'passwordsalt' => '$(openssl rand -hex 16)',
+  'secret' => '$(openssl rand -hex 32)',
+  'trusted_domains' =>
+  array (
+    0 => 'localhost',
+    1 => '127.0.0.1',
+    2 => '*',
+  ),
+  'datadirectory' => '$NEXTCLOUD_DATA',
+  'dbtype' => 'pgsql',
+  'version' => '28.0.2.5',
+  'overwrite.cli.url' => 'http://localhost:8080',
+  'overwriteprotocol' => 'http',
+  'dbname' => '$NEXTCLOUD_DB',
+  'dbhost' => 'localhost',
+  'dbport' => '',
+  'dbtableprefix' => 'oc_',
+  'dbuser' => '$NEXTCLOUD_DB_USER',
+  'dbpassword' => '$NEXTCLOUD_DB_PASSWORD',
+  'installed' => true,
+);
+EOF
+
+        # Set correct permissions
+        chown www-data:www-data /var/www/nextcloud/config/config.php
+        chmod 640 /var/www/nextcloud/config/config.php
+
+        echo "✅ Nextcloud config repaired - all user data preserved!"
+    fi
 elif [ "$NEXTCLOUD_HAS_DATA" = true ] && [ "$NEXTCLOUD_INSTALLED" = false ]; then
     echo "🔧 Nextcloud data exists but config missing - auto-repairing..."
 
@@ -242,6 +307,13 @@ echo "📰 Journalism Dashboard: http://localhost:3001"
 echo "☁️  Nextcloud: http://localhost:8080"
 echo ""
 echo "💡 Effizienz: Eine PostgreSQL-Instanz für beide Datenbanken!"
+echo ""
+
+# Clean up stale PID files to prevent startup issues
+echo "🧹 Cleaning up stale PID files..."
+rm -f /var/run/apache2/apache2.pid 2>/dev/null || true
+rm -f /var/run/postgresql/*.pid 2>/dev/null || true
+echo "   ✓ PID cleanup complete"
 echo ""
 
 # Start supervisord (this will start all services)
