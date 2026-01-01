@@ -26,12 +26,12 @@ RUN apk add --no-cache \
     curl \
     && rm -rf /var/cache/apk/*
 
+# Create app directory first
+WORKDIR /app
+
 # Create app user (Alpine Linux syntax)
 RUN addgroup -g 1000 app && \
-    adduser -D -u 1000 -G app -h /app app
-
-# Create app directory
-WORKDIR /app
+    adduser -D -u 1000 -G app app
 
 # Copy backend package files
 COPY backend/package*.json ./
