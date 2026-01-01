@@ -6,10 +6,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { readFileSync } from 'fs';
 import { requireAuth } from './middleware/auth.js';
-import nextcloudProvisioning from './services/nextcloudProvisioningService.js';
 import postgresService from './services/postgresService.js';
 
 // Import routes
+import authRouter from './routes/auth.js';
+import filesRouter from './routes/files.js';
 import dossiersRouter from './routes/dossiers.js';
 import personsRouter from './routes/persons.js';
 import uploadRouter from './routes/upload.js';
@@ -56,185 +57,35 @@ app.use('/api', cors({
 // Serve static frontend files
 app.use(express.static(path.join(__dirname, '../public')));
 
-// ===== Authentication Routes =====
+// ===== Public API Routes =====
 
-// Check if registration is needed (always show login - users managed in Nextcloud)
-app.get('/api/auth/needs-setup', async (req, res) => {
-  try {
-    // Check if Nextcloud is available
-    const isAvailable = await nextcloudProvisioning.isAvailable();
-    res.json({
-      needsSetup: false, // Always use Nextcloud login
-      nextcloudAvailable: isAvailable
-    });
-  } catch (error) {
-    res.json({
-      needsSetup: false,
-      nextcloudAvailable: false
-    });
-  }
-});
-
-// Register new user in Nextcloud
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { username, password, email } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({
-        error: 'Username and password required'
-      });
-    }
-
-    // Check if Nextcloud is available
-    const isAvailable = await nextcloudProvisioning.isAvailable();
-    if (!isAvailable) {
-      return res.status(503).json({
-        error: 'Nextcloud not available',
-        message: 'Please wait for Nextcloud to start or contact administrator'
-      });
-    }
-
-    // Create user directly in Nextcloud
-    const created = await nextcloudProvisioning.createUser(
-      username,
-      password,
-      username,
-      email
-    );
-
-    if (!created) {
-      return res.status(400).json({
-        error: 'Registration failed',
-        message: 'User could not be created in Nextcloud. User might already exist.'
-      });
-    }
-
-    console.log(`✓ User ${username} created in Nextcloud`);
-
-    // Get or create user in PostgreSQL (for AI configs, etc.)
-    const userResult = await postgresService.query(
-      'SELECT get_or_create_user($1::TEXT) as user_id',
-      [username]
-    );
-    const userId = userResult.rows[0].user_id;
-
-    // Auto-login after registration
-    req.session.authenticated = true;
-    req.session.username = username;
-    req.session.userId = userId;
-
-    res.json({
-      success: true,
-      message: 'Registration successful',
-      user: {
-        username: username,
-        email: email
-      }
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(400).json({
-      error: 'Registration failed',
-      message: error.message
-    });
-  }
-});
-
-// Login endpoint - authenticate via Nextcloud
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({
-        error: 'Username and password required'
-      });
-    }
-
-    // Validate credentials against Nextcloud
-    const isValid = await nextcloudProvisioning.verifyCredentials(username, password);
-
-    if (isValid) {
-      // Get or create user in PostgreSQL (for AI configs, etc.)
-      const userResult = await postgresService.query(
-        'SELECT get_or_create_user($1::TEXT) as user_id',
-        [username]
-      );
-      const userId = userResult.rows[0].user_id;
-
-      req.session.authenticated = true;
-      req.session.username = username;
-      req.session.userId = userId;
-
-      console.log(`✓ User ${username} (ID: ${userId}) logged in via Nextcloud`);
-
-      res.json({
-        success: true,
-        message: 'Login successful',
-        username: username
-      });
-    } else {
-      res.status(401).json({
-        error: 'Invalid credentials',
-        message: 'Please check your Nextcloud username and password'
-      });
-    }
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      error: 'Login failed',
-      message: error.message
-    });
-  }
-});
-
-// Logout endpoint
-app.post('/api/auth/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Logout failed' });
-    }
-    res.json({ success: true, message: 'Logged out successfully' });
-  });
-});
-
-// Check auth status
-app.get('/api/auth/status', (req, res) => {
-  if (req.session && req.session.authenticated) {
-    res.json({
-      authenticated: true,
-      username: req.session.username,
-      userId: req.session.userId
-    });
-  } else {
-    res.json({
-      authenticated: false
-    });
-  }
-});
-
-// Health check endpoint (public - no auth required)
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: 'Journalism Dashboard API is running',
+    message: 'Quill API is running',
     version: APP_VERSION,
     timestamp: new Date().toISOString()
   });
 });
 
-// Version endpoint (public - no auth required)
+// Version endpoint
 app.get('/api/version', (req, res) => {
   res.json({
     version: APP_VERSION,
-    name: 'Journalism Dashboard',
+    name: 'Quill - Journalism Research Platform',
     backend: packageJson.version,
     timestamp: new Date().toISOString()
   });
 });
 
+// ===== Authentication Routes =====
+app.use('/api/auth', authRouter);
+
 // ===== Protected API Routes (require authentication) =====
+
+// File Management Routes
+app.use('/api/files', filesRouter);
 
 // Investigation Routes
 app.use('/api/dossiers', dossiersRouter);
@@ -305,95 +156,24 @@ app.get('/api/storage/drive/list', requireAuth, async (req, res) => {
   }
 });
 
-// Cloud Storage Routes - Nextcloud/WebDAV
-app.post('/api/storage/nextcloud/connect', requireAuth, async (req, res) => {
-  try {
-    const { url, username, password } = req.body;
-
-    if (!url || !username || !password) {
-      return res.status(400).json({
-        error: 'Missing required fields: url, username, password'
-      });
-    }
-
-    // Test connection (in production, use proper service)
-    res.json({
-      status: 'success',
-      message: 'Nextcloud connection configured',
-      url
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.get('/api/storage/nextcloud/files', async (req, res) => {
-  try {
-    const { path = '/' } = req.query;
-
-    // TODO: Implement actual Nextcloud file listing
-    res.json({
-      status: 'pending',
-      message: 'Nextcloud integration coming soon',
-      path,
-      files: []
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/storage/nextcloud/upload', async (req, res) => {
-  try {
-    // TODO: Implement file upload to Nextcloud
-    res.json({
-      status: 'pending',
-      message: 'Nextcloud upload coming soon'
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Cloud Storage Routes - WebDAV (Generic)
-app.get('/api/storage/webdav/list', async (req, res) => {
-  try {
-    // TODO: Implement WebDAV integration
-    res.json({
-      status: 'pending',
-      message: 'WebDAV integration coming soon'
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Serve index.html for all non-API routes (React Router support)
+// SPA fallback - serve index.html for all non-API routes
 app.get('*', (req, res) => {
-  // Only serve index.html for non-API routes
-  if (!req.path.startsWith('/api')) {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-  } else {
-    res.status(404).json({
-      error: 'API route not found',
-      path: req.path
-    });
-  }
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Error handler
+// Global error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('Unhandled error:', err);
   res.status(500).json({
     error: 'Internal server error',
     message: err.message
   });
 });
 
-// Initialize PostgreSQL and start server
+// Start server
 async function startServer() {
   try {
-    // Initialize PostgreSQL connection
+    console.log('Initializing PostgreSQL connection...');
     await postgresService.initialize();
 
     app.listen(PORT, () => {
@@ -406,18 +186,16 @@ async function startServer() {
 ║   📱 Dashboard UI: http://localhost:${PORT}           ║
 ║   🔌 API: http://localhost:${PORT}/api               ║
 ║                                                       ║
-║   Authentication & Storage:                          ║
-║   ✓ Nextcloud (Single Sign-On)                       ║
-║   ✓ PostgreSQL (Investigations)                      ║
+║   Features:                                          ║
+║   ✓ Native User Management                           ║
+║   ✓ Native File Storage                              ║
+║   ✓ PostgreSQL Database                              ║
+║   ✓ Session-based Authentication                     ║
 ║                                                       ║
 ║   AI Integration ready:                              ║
 ║   ✓ Claude AI                                        ║
 ║   ✓ Google Gemini                                    ║
 ║   ✓ OpenAI ChatGPT                                   ║
-║                                                       ║
-║   Cloud Storage ready:                               ║
-║   ✓ Google Drive                                     ║
-║   ✓ Private Cloud (WebDAV)                           ║
 ║                                                       ║
 ║   © 2024-2025 Laurencius                             ║
 ╚═══════════════════════════════════════════════════════╝

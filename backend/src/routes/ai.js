@@ -45,14 +45,14 @@ router.get('/models', requireAuth, async (req, res) => {
  */
 router.get('/config', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId
+    const username = req.session.username
 
     const result = await postgresService.query(
       `SELECT id, feature_name, provider, model_name, settings, is_active, created_at, updated_at
        FROM ai_model_configs
-       WHERE user_id = $1
+       WHERE username = $1
        ORDER BY feature_name`,
-      [userId]
+      [username]
     )
 
     res.json({
@@ -74,14 +74,14 @@ router.get('/config', requireAuth, async (req, res) => {
  */
 router.get('/config/:feature', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId
+    const username = req.session.username
     const featureName = req.params.feature
 
     const result = await postgresService.query(
       `SELECT id, feature_name, provider, model_name, settings, is_active, created_at, updated_at
        FROM ai_model_configs
-       WHERE user_id = $1 AND feature_name = $2`,
-      [userId, featureName]
+       WHERE username = $1 AND feature_name = $2`,
+      [username, featureName]
     )
 
     if (result.rows.length === 0) {
@@ -122,7 +122,7 @@ router.get('/config/:feature', requireAuth, async (req, res) => {
  */
 router.put('/config/:feature', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId
+    const username = req.session.username
     const featureName = req.params.feature
     const { provider, model, apiKey, settings } = req.body
 
@@ -165,9 +165,9 @@ router.put('/config/:feature', requireAuth, async (req, res) => {
 
     // Upsert configuration
     const result = await postgresService.query(
-      `INSERT INTO ai_model_configs (user_id, feature_name, provider, model_name, api_key_encrypted, settings)
+      `INSERT INTO ai_model_configs (username, feature_name, provider, model_name, api_key_encrypted, settings)
        VALUES ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (user_id, feature_name)
+       ON CONFLICT (username, feature_name)
        DO UPDATE SET
          provider = EXCLUDED.provider,
          model_name = EXCLUDED.model_name,
@@ -175,7 +175,7 @@ router.put('/config/:feature', requireAuth, async (req, res) => {
          settings = EXCLUDED.settings,
          updated_at = NOW()
        RETURNING id, feature_name, provider, model_name, settings, is_active, created_at, updated_at`,
-      [userId, featureName, provider, model, encryptedKey, JSON.stringify(settings || {})]
+      [username, featureName, provider, model, encryptedKey, JSON.stringify(settings || {})]
     )
 
     res.json({
@@ -198,13 +198,13 @@ router.put('/config/:feature', requireAuth, async (req, res) => {
  */
 router.delete('/config/:feature', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId
+    const username = req.session.username
     const featureName = req.params.feature
 
     await postgresService.query(
       `DELETE FROM ai_model_configs
-       WHERE user_id = $1 AND feature_name = $2`,
-      [userId, featureName]
+       WHERE username = $1 AND feature_name = $2`,
+      [username, featureName]
     )
 
     res.json({
@@ -267,7 +267,7 @@ router.post('/test', requireAuth, async (req, res) => {
  */
 router.get('/usage', requireAuth, async (req, res) => {
   try {
-    const userId = req.session.userId
+    const username = req.session.username
     const feature = req.query.feature
     const days = parseInt(req.query.days || '30')
 
@@ -284,11 +284,11 @@ router.get('/usage', requireAuth, async (req, res) => {
         SUM(CASE WHEN success THEN 1 ELSE 0 END) as success_count,
         SUM(CASE WHEN NOT success THEN 1 ELSE 0 END) as error_count
       FROM ai_usage_logs
-      WHERE user_id = $1
+      WHERE username = $1
         AND created_at > NOW() - INTERVAL '${days} days'
     `
 
-    const params = [userId]
+    const params = [username]
 
     if (feature) {
       queryText += ' AND feature_name = $2'
