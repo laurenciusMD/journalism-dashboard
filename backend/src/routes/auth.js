@@ -26,13 +26,13 @@ const SALT_ROUNDS = 10
  */
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, role = 'editor' } = req.body
+    const { username, displayName, email, password, role = 'autor' } = req.body
 
     // Validate required fields
-    if (!username || !email || !password) {
+    if (!username || !displayName || !email || !password) {
       return res.status(400).json({
         error: 'Missing required fields',
-        message: 'Username, email, and password are required'
+        message: 'Username, display name, email, and password are required'
       })
     }
 
@@ -61,10 +61,10 @@ router.post('/register', async (req, res) => {
     }
 
     // Validate role
-    if (!['admin', 'editor'].includes(role)) {
+    if (!['admin', 'autor'].includes(role)) {
       return res.status(400).json({
         error: 'Invalid role',
-        message: 'Role must be either "admin" or "editor"'
+        message: 'Role must be either "admin" or "autor"'
       })
     }
 
@@ -99,10 +99,10 @@ router.post('/register', async (req, res) => {
 
     // Create user
     const result = await postgresService.query(
-      `INSERT INTO users (username, email, password_hash, role)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, username, email, role, created_at`,
-      [username, email, password_hash, role]
+      `INSERT INTO users (username, display_name, email, password_hash, role)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, username, display_name, email, role, created_at`,
+      [username, displayName, email, password_hash, role]
     )
 
     const user = result.rows[0]
@@ -121,6 +121,7 @@ router.post('/register', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
+        displayName: user.display_name,
         email: user.email,
         role: user.role,
         created_at: user.created_at
@@ -158,7 +159,7 @@ router.post('/login', async (req, res) => {
 
     // Find user
     const result = await postgresService.query(
-      `SELECT id, username, email, password_hash, role, created_at
+      `SELECT id, username, display_name, email, password_hash, role, created_at
        FROM users
        WHERE username = $1`,
       [username]
@@ -203,6 +204,7 @@ router.post('/login', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
+        displayName: user.display_name,
         email: user.email,
         role: user.role
       }
@@ -251,7 +253,7 @@ router.get('/me', async (req, res) => {
     }
 
     const result = await postgresService.query(
-      `SELECT id, username, email, role, created_at, last_login_at
+      `SELECT id, username, display_name, email, role, created_at, last_login_at
        FROM users
        WHERE id = $1`,
       [req.session.userId]
@@ -273,6 +275,7 @@ router.get('/me', async (req, res) => {
       user: {
         id: user.id,
         username: user.username,
+        displayName: user.display_name,
         email: user.email,
         role: user.role,
         created_at: user.created_at,
@@ -302,6 +305,274 @@ router.get('/status', (req, res) => {
   } else {
     res.json({
       authenticated: false
+    })
+  }
+})
+
+// ===== User Management Routes (Admin only) =====
+
+/**
+ * Middleware: Require admin role
+ */
+function requireAdmin(req, res, next) {
+  if (!req.session?.authenticated || req.session?.role !== 'admin') {
+    return res.status(403).json({
+      error: 'Forbidden',
+      message: 'Admin access required'
+    })
+  }
+  next()
+}
+
+/**
+ * GET /api/auth/users
+ * List all users (Admin only)
+ *
+ * Query params:
+ * - role: Filter by role (optional)
+ * - search: Search in username/email (optional)
+ */
+router.get('/users', requireAdmin, async (req, res) => {
+  try {
+    const { role, search } = req.query
+
+    let queryText = `
+      SELECT id, username, display_name, email, role, created_at, last_login_at
+      FROM users
+      WHERE 1=1
+    `
+    const params = []
+    let paramIndex = 1
+
+    if (role) {
+      queryText += ` AND role = $${paramIndex}`
+      params.push(role)
+      paramIndex++
+    }
+
+    if (search) {
+      queryText += ` AND (username ILIKE $${paramIndex} OR email ILIKE $${paramIndex})`
+      params.push(`%${search}%`)
+      paramIndex++
+    }
+
+    queryText += ' ORDER BY created_at DESC'
+
+    const result = await postgresService.query(queryText, params)
+
+    res.json({
+      success: true,
+      users: result.rows.map(user => ({
+        id: user.id,
+        username: user.username,
+        displayName: user.display_name,
+        email: user.email,
+        role: user.role,
+        created_at: user.created_at,
+        last_login_at: user.last_login_at
+      }))
+    })
+  } catch (error) {
+    console.error('List users error:', error)
+    res.status(500).json({
+      error: 'Failed to list users',
+      message: error.message
+    })
+  }
+})
+
+/**
+ * GET /api/auth/users/:id
+ * Get specific user (Admin only)
+ */
+router.get('/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id
+
+    const result = await postgresService.query(
+      `SELECT id, username, display_name, email, role, created_at, updated_at, last_login_at
+       FROM users
+       WHERE id = $1`,
+      [userId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'No user with this ID exists'
+      })
+    }
+
+    const user = result.rows[0]
+
+    res.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        displayName: user.display_name,
+        email: user.email,
+        role: user.role,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+        last_login_at: user.last_login_at
+      }
+    })
+  } catch (error) {
+    console.error('Get user error:', error)
+    res.status(500).json({
+      error: 'Failed to get user',
+      message: error.message
+    })
+  }
+})
+
+/**
+ * PUT /api/auth/users/:id
+ * Update user (Admin only)
+ *
+ * Body:
+ * {
+ *   "displayName": "New Name",
+ *   "email": "new@email.com",
+ *   "role": "autor"
+ * }
+ */
+router.put('/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id
+    const { displayName, email, role } = req.body
+
+    // Build update query dynamically
+    const updates = []
+    const params = []
+    let paramIndex = 1
+
+    if (displayName !== undefined) {
+      updates.push(`display_name = $${paramIndex}`)
+      params.push(displayName)
+      paramIndex++
+    }
+
+    if (email !== undefined) {
+      // Validate email
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({
+          error: 'Invalid email',
+          message: 'Please provide a valid email address'
+        })
+      }
+      updates.push(`email = $${paramIndex}`)
+      params.push(email)
+      paramIndex++
+    }
+
+    if (role !== undefined) {
+      // Validate role
+      if (!['admin', 'autor'].includes(role)) {
+        return res.status(400).json({
+          error: 'Invalid role',
+          message: 'Role must be either "admin" or "autor"'
+        })
+      }
+      updates.push(`role = $${paramIndex}`)
+      params.push(role)
+      paramIndex++
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        error: 'No updates provided',
+        message: 'Provide at least one field to update'
+      })
+    }
+
+    updates.push(`updated_at = NOW()`)
+    params.push(userId)
+
+    const queryText = `
+      UPDATE users
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex}
+      RETURNING id, username, display_name, email, role, updated_at
+    `
+
+    const result = await postgresService.query(queryText, params)
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'No user with this ID exists'
+      })
+    }
+
+    const user = result.rows[0]
+
+    console.log(`✓ User ${user.username} updated by admin`)
+
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      user: {
+        id: user.id,
+        username: user.username,
+        displayName: user.display_name,
+        email: user.email,
+        role: user.role,
+        updated_at: user.updated_at
+      }
+    })
+  } catch (error) {
+    console.error('Update user error:', error)
+    res.status(500).json({
+      error: 'Failed to update user',
+      message: error.message
+    })
+  }
+})
+
+/**
+ * DELETE /api/auth/users/:id
+ * Delete user (Admin only)
+ * Note: Cannot delete yourself
+ */
+router.delete('/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id
+
+    // Prevent self-deletion
+    if (parseInt(userId) === req.session.userId) {
+      return res.status(400).json({
+        error: 'Cannot delete yourself',
+        message: 'You cannot delete your own account'
+      })
+    }
+
+    const result = await postgresService.query(
+      'DELETE FROM users WHERE id = $1 RETURNING username',
+      [userId]
+    )
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'No user with this ID exists'
+      })
+    }
+
+    const deletedUsername = result.rows[0].username
+
+    console.log(`✓ User ${deletedUsername} deleted by admin`)
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    })
+  } catch (error) {
+    console.error('Delete user error:', error)
+    res.status(500).json({
+      error: 'Failed to delete user',
+      message: error.message
     })
   }
 })
