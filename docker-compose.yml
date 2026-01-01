@@ -1,5 +1,5 @@
 services:
-  # ===== Journalism Dashboard =====
+  # ===== Quill Dashboard =====
   journalism-dashboard:
     build:
       context: .
@@ -9,39 +9,29 @@ services:
     restart: unless-stopped
     ports:
       - "3001:3001"  # Dashboard UI & API
-      - "8080:8080"  # Internal Nextcloud UI
     environment:
       - NODE_ENV=production
       - PORT=3001
       # Session
       - SESSION_SECRET=${SESSION_SECRET}
-      # Nextcloud Setup (only for initial admin account creation)
-      - NEXTCLOUD_INITIAL_ADMIN_USER=${NEXTCLOUD_INITIAL_ADMIN_USER:-admin}
-      - NEXTCLOUD_INITIAL_ADMIN_PASSWORD=${NEXTCLOUD_INITIAL_ADMIN_PASSWORD:-admin123}
-      # Nextcloud Connection (Internal - runs inside this container)
-      - NEXTCLOUD_URL=http://localhost:8080
       # AI Services
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      # AI Encryption
+      # AI Encryption (for user API keys)
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      # Google Drive
+      # Google Drive Integration
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3001/auth/google/callback}
-      # Generic WebDAV
-      - WEBDAV_URL=${WEBDAV_URL}
-      - WEBDAV_USERNAME=${WEBDAV_USERNAME}
-      - WEBDAV_PASSWORD=${WEBDAV_PASSWORD}
-      # PostgreSQL (for dossiers/investigations)
+      # PostgreSQL
       - POSTGRES_URL=postgresql://journalism:${JOURNALISM_DB_PASSWORD:-journalism_password}@postgres:5432/journalism
-      # Redis (for job queues)
+      # Redis (for sessions & job queues)
       - REDIS_URL=redis://redis:6379
     volumes:
       - dashboard-data:/app/data
       - evidence-storage:/app/evidence
-      - nextcloud-data:/var/www/html/data  # Internal Nextcloud data
+      - uploads:/app/uploads  # Native file upload storage
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,7 +46,7 @@ services:
       retries: 3
       start_period: 10s
 
-  # ===== PostgreSQL (Journalism Database + Nextcloud) =====
+  # ===== PostgreSQL =====
   postgres:
     image: postgres:15-alpine
     container_name: journalism-postgres
@@ -77,7 +67,7 @@ services:
       retries: 5
       start_period: 10s
 
-  # ===== Redis (Job Queue) =====
+  # ===== Redis =====
   redis:
     image: redis:7-alpine
     container_name: journalism-redis
@@ -98,22 +88,22 @@ networks:
     driver: bridge
 
 volumes:
-  # Internal Nextcloud data (users, files, settings)
-  nextcloud-data:
-    driver: local
-
   # Dashboard data volume
   dashboard-data:
     driver: local
 
-  # PostgreSQL data volume (journalism DB + Nextcloud DB)
+  # PostgreSQL data volume
   postgres-data:
     driver: local
 
-  # Redis data volume (job queues)
+  # Redis data volume (sessions & job queues)
   redis-data:
     driver: local
 
   # Evidence storage (media, documents)
   evidence-storage:
+    driver: local
+
+  # Native file uploads
+  uploads:
     driver: local
