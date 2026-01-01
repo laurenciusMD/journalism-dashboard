@@ -26,12 +26,8 @@ RUN apk add --no-cache \
     curl \
     && rm -rf /var/cache/apk/*
 
-# Create app directory first
+# Set working directory
 WORKDIR /app
-
-# Create app user (Alpine Linux syntax)
-RUN addgroup -g 1000 app && \
-    adduser -D -u 1000 -G app app
 
 # Copy backend package files
 COPY backend/package*.json ./
@@ -46,21 +42,17 @@ COPY backend/ ./
 # Copy built frontend from frontend-builder stage
 COPY --from=frontend-builder /app/frontend/dist ./public
 
-# Create necessary directories with proper permissions
+# Create necessary directories
 RUN mkdir -p /app/data \
     /app/evidence \
     /app/uploads \
-    /var/log \
-    && chown -R app:app /app
+    /var/log
 
 # Copy database migrations
 COPY backend/migrations /app/migrations
 
 # Copy version file
 COPY VERSION /app/VERSION
-
-# Switch to app user
-USER app
 
 # Metadata labels
 LABEL org.opencontainers.image.title="Quill - Journalism Research Platform" \
