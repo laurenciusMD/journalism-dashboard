@@ -6,14 +6,19 @@ import Register from './components/Register.jsx'
 import ResearchPanel from './components/ResearchPanel.jsx'
 import TextFileReader from './components/TextFileReader.jsx'
 import AISettings from './components/AISettings.jsx'
+import UserSettings from './components/UserSettings.jsx'
+import UserManagement from './components/UserManagement.jsx'
+import FilesPanel from './components/FilesPanel.jsx'
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [username, setUsername] = useState('')
+  const [userRole, setUserRole] = useState('autor') // 'admin' or 'autor'
   const [loading, setLoading] = useState(true)
   const [needsSetup, setNeedsSetup] = useState(false)
   const [activeTab, setActiveTab] = useState('overview')
   const [showSettings, setShowSettings] = useState(false)
+  const [showUserSettings, setShowUserSettings] = useState(false)
   const [sharedContent, setSharedContent] = useState('') // Content sharing between panels
   const [showChangelog, setShowChangelog] = useState(false)
   const [showRoadmap, setShowRoadmap] = useState(false)
@@ -42,6 +47,7 @@ function App() {
         if (authData.authenticated) {
           setIsAuthenticated(true)
           setUsername(authData.username)
+          setUserRole(authData.role || 'autor')
         }
       }
     } catch (err) {
@@ -55,11 +61,15 @@ function App() {
     setIsAuthenticated(true)
     setUsername(user)
     setNeedsSetup(false)
+    // Reload auth status to get user role
+    checkSetupAndAuth()
   }
 
   const handleLoginSuccess = (user) => {
     setIsAuthenticated(true)
     setUsername(user)
+    // Reload auth status to get user role
+    checkSetupAndAuth()
   }
 
   const handleLogout = async () => {
@@ -113,9 +123,9 @@ function App() {
           <div className="header-right">
             <div
               className="user-badge"
-              onClick={() => window.open('http://localhost:8080/settings/user', '_blank')}
+              onClick={() => setShowUserSettings(true)}
               style={{ cursor: 'pointer' }}
-              title="NextCloud Profil öffnen"
+              title="Benutzereinstellungen öffnen"
             >
               <span>👤</span>
               <span>{username}</span>
@@ -193,10 +203,24 @@ function App() {
             onClick={() => setActiveTab('files')}
           >
             <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
-              <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
             </svg>
-            <span>NextCloud</span>
+            <span>Dateien</span>
           </button>
+          {userRole === 'admin' && (
+            <button
+              className={`nav-button ${activeTab === 'users' ? 'active' : ''}`}
+              onClick={() => setActiveTab('users')}
+            >
+              <svg className="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#1A1833" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{width: '20px', height: '20px'}}>
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <span>Benutzer</span>
+            </button>
+          )}
         </nav>
       </div>
 
@@ -208,8 +232,18 @@ function App() {
         {!showSettings && activeTab === 'correct' && <CorrectPanel sharedContent={sharedContent} setSharedContent={setSharedContent} setActiveTab={setActiveTab} />}
         {!showSettings && activeTab === 'gpts' && <GPTsPanel sharedContent={sharedContent} setSharedContent={setSharedContent} setActiveTab={setActiveTab} />}
         {!showSettings && activeTab === 'social' && <SocialMediaPanel sharedContent={sharedContent} setSharedContent={setSharedContent} />}
-        {!showSettings && activeTab === 'files' && <NextcloudPanel />}
+        {!showSettings && activeTab === 'files' && <FilesPanel />}
+        {!showSettings && activeTab === 'users' && userRole === 'admin' && <UserManagement />}
       </main>
+
+      {/* User Settings Modal */}
+      {showUserSettings && (
+        <UserSettings
+          username={username}
+          userRole={userRole}
+          onClose={() => setShowUserSettings(false)}
+        />
+      )}
 
       <footer className="footer">
         <p>
@@ -720,98 +754,6 @@ function SocialMediaPanel({ sharedContent, setSharedContent }) {
             </div>
           </div>
         )}
-      </div>
-    </div>
-  )
-}
-
-// ===== NEXTCLOUD: Dateien =====
-function NextcloudPanel() {
-  const nextcloudFeatures = [
-    {
-      icon: '📁',
-      title: 'Dateien verwalten',
-      description: 'Laden Sie Dokumente hoch, organisieren Sie Ordner und greifen Sie von überall auf Ihre Dateien zu.',
-      url: 'http://localhost:8080/apps/files'
-    },
-    {
-      icon: '📅',
-      title: 'Kalender nutzen',
-      description: 'Verwalten Sie Termine, Deadlines und koordinieren Sie Events mit Ihrem Team.',
-      url: 'http://localhost:8080/apps/calendar'
-    },
-    {
-      icon: '👥',
-      title: 'Kontakte speichern',
-      description: 'Zentrale Verwaltung Ihrer Kontakte mit Sync-Funktion für alle Geräte.',
-      url: 'http://localhost:8080/apps/contacts'
-    },
-    {
-      icon: '📝',
-      title: 'Notizen erstellen',
-      description: 'Schnelle Notizen, Recherche-Snippets und Ideen direkt in der Cloud speichern.',
-      url: 'http://localhost:8080/apps/notes'
-    },
-    {
-      icon: '🖼️',
-      title: 'Fotos & Videos',
-      description: 'Medien-Archiv für Ihre journalistischen Inhalte mit Vorschau-Funktion.',
-      url: 'http://localhost:8080/apps/photos'
-    },
-    {
-      icon: '🔗',
-      title: 'Teilen & Kollaboration',
-      description: 'Teilen Sie Dateien sicher mit Kollegen und externen Partnern.',
-      url: 'http://localhost:8080/apps/files'
-    }
-  ]
-
-  return (
-    <div className="panel">
-      <h2>☁️ NextCloud</h2>
-      <p className="panel-description">Ihre selbst-gehostete Cloud für Dateien, Kalender und Kontakte</p>
-
-      <div className="nextcloud-info" style={{ marginBottom: '2rem' }}>
-        <div className="info-card">
-          <h3>🚀 NextCloud läuft!</h3>
-          <p>Ihre NextCloud-Instanz ist konfiguriert. Nutzen Sie Ihre Registrierungs-Credentials für den Login.</p>
-          <a href="http://localhost:8080" target="_blank" rel="noopener noreferrer" className="nextcloud-btn" style={{ display: 'inline-block', marginTop: '1rem', padding: '0.75rem 1.5rem', background: '#7FC1CC', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
-            ☁️ NextCloud Dashboard öffnen →
-          </a>
-        </div>
-      </div>
-
-      <h3 style={{ marginBottom: '1.5rem', color: '#1A1833' }}>✨ Verfügbare Features</h3>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-        {nextcloudFeatures.map((feature, index) => (
-          <div
-            key={index}
-            style={{
-              background: '#fff',
-              border: '2px solid #E8F4F8',
-              borderRadius: '12px',
-              padding: '1.5rem',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer'
-            }}
-            onClick={() => window.open(feature.url, '_blank')}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#7FC1CC'
-              e.currentTarget.style.transform = 'translateY(-4px)'
-              e.currentTarget.style.boxShadow = '0 8px 16px rgba(127, 193, 204, 0.2)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#E8F4F8'
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          >
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>{feature.icon}</div>
-            <h4 style={{ color: '#1A1833', marginBottom: '0.5rem', fontSize: '1.1rem' }}>{feature.title}</h4>
-            <p style={{ color: '#666', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1rem' }}>{feature.description}</p>
-            <span style={{ color: '#7FC1CC', fontSize: '0.85rem', fontWeight: '600' }}>Öffnen →</span>
-          </div>
-        ))}
       </div>
     </div>
   )

@@ -86,15 +86,6 @@ function Login({ onLoginSuccess }) {
             disabled={loading}
           />
 
-          <div style={{
-            fontSize: '13px',
-            color: 'var(--secondary-text)',
-            marginTop: '8px',
-            textAlign: 'center'
-          }}>
-            💡 Verwenden Sie Ihre Nextcloud-Zugangsdaten
-          </div>
-
           <button
             type="submit"
             className="login-button"

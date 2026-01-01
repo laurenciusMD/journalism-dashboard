@@ -621,4 +621,81 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
   }
 })
 
+/**
+ * POST /api/auth/change-password
+ * Change user's password
+ *
+ * Body:
+ * {
+ *   "currentPassword": "OldPassword123",
+ *   "newPassword": "NewPassword456"
+ * }
+ */
+router.post('/change-password', requireAuth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        error: 'Missing fields',
+        message: 'Current password and new password are required'
+      })
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        error: 'Weak password',
+        message: 'New password must be at least 8 characters long'
+      })
+    }
+
+    // Get current user
+    const userResult = await postgresService.query(
+      'SELECT id, password_hash FROM users WHERE username = $1',
+      [req.session.user.username]
+    )
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        error: 'User not found',
+        message: 'User account not found'
+      })
+    }
+
+    const user = userResult.rows[0]
+
+    // Verify current password
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password_hash)
+
+    if (!passwordMatch) {
+      return res.status(401).json({
+        error: 'Invalid password',
+        message: 'Current password is incorrect'
+      })
+    }
+
+    // Hash new password
+    const newPasswordHash = await bcrypt.hash(newPassword, SALT_ROUNDS)
+
+    // Update password
+    await postgresService.query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      [newPasswordHash, user.id]
+    )
+
+    console.log(`✓ Password changed for user: ${req.session.user.username}`)
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    })
+  } catch (error) {
+    console.error('Change password error:', error)
+    res.status(500).json({
+      error: 'Failed to change password',
+      message: error.message
+    })
+  }
+})
+
 export default router
