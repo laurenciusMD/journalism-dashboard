@@ -114,7 +114,7 @@ app.post('/api/auth/register', async (req, res) => {
 
     // Get or create user in PostgreSQL (for AI configs, etc.)
     const userResult = await postgresService.query(
-      'SELECT get_or_create_user($1) as user_id',
+      'SELECT get_or_create_user($1::TEXT) as user_id',
       [username]
     );
     const userId = userResult.rows[0].user_id;
@@ -158,7 +158,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (isValid) {
       // Get or create user in PostgreSQL (for AI configs, etc.)
       const userResult = await postgresService.query(
-        'SELECT get_or_create_user($1) as user_id',
+        'SELECT get_or_create_user($1::TEXT) as user_id',
         [username]
       );
       const userId = userResult.rows[0].user_id;

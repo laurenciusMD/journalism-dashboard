@@ -309,5 +309,12 @@ echo ""
 echo "💡 Effizienz: Eine PostgreSQL-Instanz für beide Datenbanken!"
 echo ""
 
+# Clean up stale PID files to prevent startup issues
+echo "🧹 Cleaning up stale PID files..."
+rm -f /var/run/apache2/apache2.pid 2>/dev/null || true
+rm -f /var/run/postgresql/*.pid 2>/dev/null || true
+echo "   ✓ PID cleanup complete"
+echo ""
+
 # Start supervisord (this will start all services)
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
