@@ -26,9 +26,9 @@ RUN apk add --no-cache \
     curl \
     && rm -rf /var/cache/apk/*
 
-# Create app user
+# Create app user (Alpine Linux syntax)
 RUN addgroup -g 1000 app && \
-    adduser -D -u 1000 -G app app
+    adduser -D -u 1000 -G app -h /app app
 
 # Create app directory
 WORKDIR /app

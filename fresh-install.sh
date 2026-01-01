@@ -192,25 +192,24 @@ echo ""
 
 # Prüfe Datenbank
 echo "🗄️  Prüfe Datenbank-Funktion:"
-if docker compose exec -T journalism-dashboard su - postgres -c "psql -d journalism -c 'SELECT 1 as test;'" >/dev/null 2>&1; then
-    echo "   ✓ PostgreSQL (journalism) erreichbar"
+if docker compose exec -T postgres pg_isready -U journalism >/dev/null 2>&1; then
+    echo "   ✓ PostgreSQL erreichbar"
+
+    # Prüfe journalism Datenbank
+    if docker compose exec -T postgres psql -U journalism -c 'SELECT 1 as test;' >/dev/null 2>&1; then
+        echo "   ✓ journalism Datenbank bereit"
+    else
+        echo -e "   ${YELLOW}⚠ journalism Datenbank noch nicht bereit${NC}"
+    fi
+
+    # Prüfe users table
+    if docker compose exec -T postgres psql -U journalism -c '\dt users' 2>/dev/null | grep -q "users"; then
+        echo "   ✓ users Tabelle existiert"
+    else
+        echo -e "   ${YELLOW}⚠ users Tabelle noch nicht erstellt${NC}"
+    fi
 else
     echo -e "   ${YELLOW}⚠ PostgreSQL noch nicht bereit${NC}"
-fi
-
-if docker compose exec -T journalism-dashboard su - postgres -c "psql -d nextcloud -c 'SELECT 1 as test;'" >/dev/null 2>&1; then
-    echo "   ✓ PostgreSQL (nextcloud) erreichbar"
-else
-    echo -e "   ${YELLOW}⚠ PostgreSQL noch nicht bereit${NC}"
-fi
-echo ""
-
-# Prüfe get_or_create_user Funktion
-echo "🔧 Prüfe get_or_create_user() Funktion:"
-if docker compose exec -T journalism-dashboard su - postgres -c "psql -d journalism -c '\df get_or_create_user'" 2>/dev/null | grep -q "get_or_create_user"; then
-    echo "   ✓ Funktion existiert in journalism DB"
-else
-    echo -e "   ${YELLOW}⚠ Funktion noch nicht gefunden (möglicherweise wird Migration noch ausgeführt)${NC}"
 fi
 echo ""
 
@@ -226,13 +225,12 @@ echo -e "${GREEN}✅ System ist bereit!${NC}"
 echo ""
 echo "📍 Zugriff:"
 echo "   Dashboard:  http://localhost:3001"
-echo "   Nextcloud:  http://localhost:8080"
 echo ""
 echo "🔐 Nächste Schritte:"
-echo "   1. In Nextcloud anmelden (Admin-User aus Setup)"
-echo "   2. Weiteren User erstellen: laurencius"
-echo "   3. Dashboard testen: http://localhost:3001"
-echo "   4. Login mit Nextcloud-Credentials testen"
+echo "   1. Dashboard öffnen: http://localhost:3001"
+echo "   2. Ersten Admin-User registrieren (wird automatisch Admin)"
+echo "   3. Weitere User im Dashboard erstellen (werden automatisch 'autor')"
+echo "   4. Login testen"
 echo "   5. AI-Settings → Claude API Key speichern testen"
 echo ""
 echo "📋 Nützliche Commands:"

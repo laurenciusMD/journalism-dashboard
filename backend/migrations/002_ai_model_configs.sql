@@ -4,7 +4,7 @@
 -- ===== AI Model Configs Table =====
 CREATE TABLE IF NOT EXISTS ai_model_configs (
   id SERIAL PRIMARY KEY,
-  username TEXT NOT NULL, -- Nextcloud username (single source of truth)
+  username TEXT NOT NULL, -- Username from users table (single source of truth)
   feature_name TEXT NOT NULL, -- 'transcription', 'summarize', 'correct', 'gpts', 'embedding', 'fact_check'
   provider TEXT NOT NULL, -- 'openai', 'anthropic', 'google'
   model_name TEXT NOT NULL, -- 'gpt-4', 'claude-3-opus-20240229', 'gemini-pro'
@@ -41,7 +41,7 @@ COMMENT ON COLUMN ai_model_configs.settings IS 'Model-specific settings (tempera
 -- ===== Usage Tracking Table (optional) =====
 CREATE TABLE IF NOT EXISTS ai_usage_logs (
   id SERIAL PRIMARY KEY,
-  username TEXT NOT NULL, -- Nextcloud username
+  username TEXT NOT NULL, -- Username from users table
   feature_name TEXT NOT NULL,
   provider TEXT NOT NULL,
   model_name TEXT NOT NULL,
