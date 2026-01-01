@@ -6,6 +6,7 @@
 import express from 'express'
 import bcrypt from 'bcrypt'
 import postgresService from '../services/postgresService.js'
+import { requireAuth } from '../middleware/auth.js'
 
 const router = express.Router()
 
