@@ -13,6 +13,35 @@ const router = express.Router()
 const SALT_ROUNDS = 10
 
 /**
+ * GET /api/auth/needs-setup
+ * Check if initial setup is needed (no users exist)
+ */
+router.get('/needs-setup', async (req, res) => {
+  try {
+    const result = await postgresService.query(
+      'SELECT COUNT(*) as count FROM users'
+    )
+
+    const userCount = parseInt(result.rows[0].count)
+    const needsSetup = userCount === 0
+
+    res.json({
+      needsSetup: needsSetup,
+      message: needsSetup
+        ? 'No users found. Please create an initial admin account.'
+        : 'System is already set up.'
+    })
+  } catch (error) {
+    console.error('Needs setup check error:', error)
+    // If table doesn't exist yet, assume setup is needed
+    res.json({
+      needsSetup: true,
+      message: 'Database not initialized. Please create an initial admin account.'
+    })
+  }
+})
+
+/**
  * POST /api/auth/register
  * Register a new user
  *
@@ -26,7 +55,7 @@ const SALT_ROUNDS = 10
  */
 router.post('/register', async (req, res) => {
   try {
-    const { username, displayName, email, password, role = 'autor' } = req.body
+    let { username, displayName, email, password, role } = req.body
 
     // Validate required fields
     if (!username || !displayName || !email || !password) {
@@ -34,6 +63,21 @@ router.post('/register', async (req, res) => {
         error: 'Missing required fields',
         message: 'Username, display name, email, and password are required'
       })
+    }
+
+    // Check if this is the first user (initial setup)
+    const countResult = await postgresService.query(
+      'SELECT COUNT(*) as count FROM users'
+    )
+    const userCount = parseInt(countResult.rows[0].count)
+    const isFirstUser = userCount === 0
+
+    // First user is automatically admin, others default to 'autor'
+    if (isFirstUser) {
+      role = 'admin'
+      console.log('🎯 Creating first user as admin')
+    } else if (!role) {
+      role = 'autor'
     }
 
     // Validate username format (alphanumeric + underscore, 3-50 chars)
